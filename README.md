@@ -2,7 +2,7 @@
 
 A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photo gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
 
-> **You are on v2.2** — quick check: `package.json` says `"version": "2.2.0"`. v2.2 fixes the invisible animated background (an opaque wrapper was painting over the starfield), adds a **system status panel** to the admin (it tells you exactly when edits aren't saving and why), **country tracking** on clicks, a **3-strikes 24-hour login lockout**, and a full set of security headers. v2.1 fixed the missing `@types/node` build error; v2.0 fixed the `.gitignore`/`local-store.ts` deploy bug and the Supabase `42P17` schema error.
+> **You are on v2.3.0** — quick check: `package.json` says `"version": "2.3.0"`. v2.3.0 fixes the "admin edits don't update anything" class of bug: when the database can't be read, the site **silently fell back to built-in demo content** (which looks identical to the real thing) — now the admin dashboard shows exactly what broke and why (status panel + red banner on every tab), API errors return real messages instead of `[object Object]`, the status check verifies the actual write path (service key role, tables, permissions, public reads), and the Content-Security-Policy allows your real Supabase origin instead of hard-coded `*.supabase.co`. v2.2.1 fixed the `42703: column "country" does not exist` schema upgrade error. v2.2 fixed the invisible animated background, added the admin status panel, country tracking, the 3-strikes 24-hour login lockout, and security headers. v2.1 fixed the missing `@types/node` build error; v2.0 fixed the `.gitignore`/`local-store.ts` deploy bug and the Supabase `42P17` schema error.
 
 ![theme](https://img.shields.io/badge/theme-deep%20space-6331FB) ![stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20Supabase%20%C2%B7%20Tailwind%204-88F9C0)
 
@@ -64,7 +64,7 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 2. Open **SQL Editor → New query**, paste the whole of [`supabase/schema.sql`](supabase/schema.sql), press **Run**
    - creates all tables (incl. `posts` + `page_sections`), row-level security, tracking functions and starter content
    - the script is **idempotent** — if an earlier run failed halfway, just run it again; existing rows are skipped
-   - **Upgrading from an earlier version?** re-run the whole file — it is idempotent. v2.2 adds the `country` column on `visitors`/`link_clicks`, the `admin_auth_attempts` table (login lockout), and the `top_countries()` RPC
+   - **Upgrading from an earlier version?** re-run the whole file — it is idempotent. v2.2 adds the `country` column on `visitors`/`link_clicks`, the `admin_auth_attempts` table (login lockout), and the `top_countries()` RPC. v2.2.1 fixes the upgrade itself: on databases set up before v2.2 the run used to stop with `42703: column "country" does not exist` — if you ever saw that error, just run this file again and it completes (your existing rows are kept; old analytics rows get `country = 'unknown'`)
 3. Copy `.env.example` → `.env.local` and fill in, from **Supabase Dashboard → Settings → API**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -74,7 +74,7 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 
 ## ▲ Deploy to Vercel
 
-**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: `package.json` says `"version": "2.1.0"`.
+**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: `package.json` says `"version": "2.3.0"`.
 
 **Option A — CLI**
 
@@ -101,7 +101,16 @@ git ls-files | grep local-store
 
 Then open your site, head to **`/admin`**, log in with your `ADMIN_PASSWORD`, and replace the demo persona with your own name, links, projects, photos and posts — all edits save straight to Supabase.
 
-**“My edits don't show up / don't save”?** Open the admin dashboard — the **system status panel** at the top tells you exactly what's wrong. The two usual causes: (1) missing `SUPABASE_SERVICE_ROLE_KEY` on Vercel (the site reads fine but every admin write is rejected), or (2) the site is still in demo mode because the `NEXT_PUBLIC_*` vars weren't set **before** the last build — set all four vars and **redeploy** (public env vars are baked in at build time).
+**“My edits don't show up / don't save”?** The admin dashboard now diagnoses this for you — open **Mission Control** (the first admin tab) and read the system status panel, which walks the exact path an edit takes (env vars → service key → tables → write permission → public reads) and names the first broken step. A red banner also appears on every admin tab if the dashboard itself is falling back to demo content. The usual causes, in order of likelihood:
+
+| What the status panel says | Fix |
+| --- | --- |
+| “database not set up — run supabase/schema.sql” / “tables don't exist” | Open the Supabase **SQL Editor**, paste the **whole** `supabase/schema.sql` and Run. A failed run rolls back completely, so if your first attempt errored (e.g. the v2.2 `42703` bug fixed in v2.2.1), the tables were never created — just run the fixed file. |
+| “wrong key in SUPABASE_SERVICE_ROLE_KEY” | You pasted the anon (publishable) key into the service slot. Copy the `service_role` **secret** from Supabase → Settings → API, update the env var, **redeploy**. |
+| “The public site can't read your database” or “anon key sees 0 rows” | Wrong `NEXT_PUBLIC_SUPABASE_ANON_KEY`, or the RLS read policies are missing — re-run `supabase/schema.sql`. Either way the site silently shows demo content, which is exactly why edits look like they don't stick. |
+| “server env vars missing” | Add the three Supabase vars in Vercel → Settings → Environment Variables, then **redeploy** — `NEXT_PUBLIC_*` values are baked in at build time, so setting them without a new build changes nothing. |
+| “This browser can't read the database — demo content shown” (amber) | Server checks pass but the browser can't reach Supabase. Almost always env vars set after the last build — redeploy. |
+| Locked out of `/admin` ("Too many failed attempts") | You get 3 tries, then a 24h lock per device. To unlock early, run `delete from public.admin_auth_attempts;` in the SQL editor (or use a different network). |
 
 ## 🔐 Security model
 

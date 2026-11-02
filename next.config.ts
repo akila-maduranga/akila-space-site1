@@ -1,6 +1,28 @@
 import type { NextConfig } from "next";
 
 /**
+ * connect-src must allow the Supabase REST origin the client actually talks
+ * to. Hard-coding https://*.supabase.co silently breaks public reads (the
+ * browser blocks them → the site falls back to demo content) for any project
+ * not on that domain — e.g. self-hosted Supabase. Derive it from the
+ * configured URL instead; fall back to the wildcard when unset.
+ */
+function supabaseConnectSrc(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (url) {
+    try {
+      const u = new URL(url);
+      const scheme = u.protocol.replace(":", "");
+      const ws = scheme === "https" ? "wss" : "ws";
+      return `${scheme}://${u.host} ${ws}://${u.host}`;
+    } catch {
+      /* malformed URL — fall through to the default */
+    }
+  }
+  return "https://*.supabase.co wss://*.supabase.co";
+}
+
+/**
  * Security headers applied to every response.
  */
 const securityHeaders = [
@@ -25,7 +47,8 @@ const securityHeaders = [
     // - 'unsafe-inline' script is required by Next.js inline bootstrap
     // - 'unsafe-inline' style is required by framer-motion/Vanta inline styles
     // - img-src https: covers Cloudflare R2 photo URLs and brand icons
-    // - connect-src only this origin + *.supabase.co (data + analytics RPCs)
+    // - connect-src: this origin + the configured Supabase origin (see
+    //   supabaseConnectSrc above — never hard-code the Supabase domain)
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
@@ -33,7 +56,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      `connect-src 'self' ${supabaseConnectSrc()}`,
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",

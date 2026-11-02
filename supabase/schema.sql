@@ -105,6 +105,9 @@ create table if not exists public.posts (
   created_at     timestamptz not null default now(),
   visible        boolean not null default true
 );
+-- upgrade path: older databases may predate the visible flag; the seed
+-- inserts below reference it, so make sure it exists first.
+alter table public.posts add column if not exists visible boolean not null default true;
 create index if not exists posts_published_idx on public.posts (published_at desc);
 
 -- page sections — toggle each part of the home page on/off from admin
@@ -130,6 +133,12 @@ create table if not exists public.visitors (
   device      text not null default 'desktop',
   country     text not null default 'unknown'
 );
+-- UPGRADE PATH (databases set up before country tracking): on an existing
+-- database `create table if not exists` above is a no-op, so the country
+-- column must be added HERE — before any index or function below touches
+-- it. (Creating the index first is exactly what made re-running this file
+-- fail with 42703 "column \"country\" does not exist".)
+alter table public.visitors add column if not exists country text not null default 'unknown';
 create index if not exists visitors_last_seen_idx on public.visitors (last_seen desc);
 create index if not exists visitors_referrer_idx on public.visitors (referrer);
 
@@ -153,6 +162,9 @@ create table if not exists public.link_clicks (
   visitor_id text not null default '',
   country    text not null default 'unknown'
 );
+-- UPGRADE PATH: same guard — the column must exist before the country
+-- index below is created on a pre-country database.
+alter table public.link_clicks add column if not exists country text not null default 'unknown';
 create index if not exists link_clicks_clicked_at_idx on public.link_clicks (clicked_at desc);
 create index if not exists link_clicks_platform_idx on public.link_clicks (platform);
 create index if not exists link_clicks_country_idx on public.link_clicks (country);
@@ -169,9 +181,9 @@ create table if not exists public.admin_auth_attempts (
 alter table public.admin_auth_attempts enable row level security;
 revoke all on public.admin_auth_attempts from anon, authenticated;
 
--- upgrades from earlier versions: add the country column if it's missing
-alter table public.visitors    add column if not exists country text not null default 'unknown';
-alter table public.link_clicks add column if not exists country text not null default 'unknown';
+-- (the country upgrade ALTERs now live directly after each analytics
+--  table's CREATE — before the indexes and functions that reference the
+--  column; that ordering is what makes re-runs on older databases work)
 
 -- ───────────────────────────────────────────────
 --  ROW LEVEL SECURITY
@@ -480,10 +492,16 @@ on conflict (key) do nothing;
 --  section was renamed) — flips the old "photography" key
 --  to "gallery" so the site keeps showing the section
 -- ═══════════════════════════════════════════════════════════
+-- guarded: when the seed above already inserted a "gallery" row (any
+-- database set up after the rename), a plain UPDATE would crash into
+-- the primary key — so rename only while "gallery" is still free, and
+-- drop the stale "photography" row otherwise.
 update public.page_sections
    set key = 'gallery',
        label = case when label = 'Photography' then 'Gallery' else label end
- where key = 'photography';
+ where key = 'photography'
+   and not exists (select 1 from public.page_sections where key = 'gallery');
+delete from public.page_sections where key = 'photography';
 
 -- ═══════════════════════════════════════════════════════════════════
 --  DONE! Tables, security, tracking functions and starter content

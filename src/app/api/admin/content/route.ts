@@ -5,6 +5,16 @@ import { SEED_EXPERIENCES, SEED_PAGES, SEED_PHOTOS, SEED_POSTS, SEED_PROFILE, SE
 
 const DEFAULT_PASSWORD = "admin123";
 
+/** Supabase/PostgREST errors are plain objects, not Error instances — pull
+ *  the message out without collapsing everything to "[object Object]". */
+function errMsg(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
 function authorize(req: Request): boolean {
   const auth = req.headers.get("authorization") || "";
   const token = auth.replace(/^Bearer\s+/i, "");
@@ -234,7 +244,7 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Database error" },
+      { error: errMsg(err) },
       { status: 500 }
     );
   }

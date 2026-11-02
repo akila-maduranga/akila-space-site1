@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  AlertTriangle,
   BarChart3,
   Camera,
   FolderGit2,
@@ -146,7 +147,13 @@ export default function AdminApp() {
     return Boolean(sessionStorage.getItem("cosmosfolio_admin_token"));
   });
   const [tab, setTab] = useState<TabId>("overview");
-  const { profile, mode } = useSite();
+  const { profile, mode, readError } = useSite();
+
+  const statusLabel = readError
+    ? "read failure — showing demo data"
+    : mode === "supabase"
+      ? "supabase connected"
+      : "local demo mode";
 
   const logout = useCallback(() => {
     sessionStorage.removeItem("cosmosfolio_admin_token");
@@ -175,8 +182,12 @@ export default function AdminApp() {
             </span>
             <div className="hidden sm:block">
               <p className="font-display text-sm font-bold text-starlight">Mission Control</p>
-              <p className="font-mono text-[10px] text-muted-foreground">
-                {profile.name} · {mode === "supabase" ? "supabase connected" : "local demo mode"}
+              <p
+                className={`font-mono text-[10px] ${
+                  readError ? "text-[#ff5d7a]" : "text-muted-foreground"
+                }`}
+              >
+                {profile.name} · {statusLabel}
               </p>
             </div>
           </div>
@@ -230,6 +241,24 @@ export default function AdminApp() {
 
         {/* content */}
         <main className="min-w-0 flex-1">
+          {/* read failure banner — visible on EVERY tab, because a broken read
+              path is why edits look like they "don't stick": saves succeed,
+              then the refresh silently falls back to built-in demo content. */}
+          {readError ? (
+            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[#ff5d7a]/30 bg-[#ff5d7a]/[0.06] p-4">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5d7a]" />
+              <div>
+                <p className="font-display text-sm font-semibold text-starlight">
+                  Can&apos;t read your database — the dashboard is showing built-in demo content
+                </p>
+                <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+                  Edits may report success but appear to revert, and the public site keeps showing
+                  demo content. First error: <span className="text-[#ff5d7a]/90">{readError}</span>. Check the
+                  system status panel in Mission Control for the likely cause and fix.
+                </p>
+              </div>
+            </div>
+          ) : null}
           <AnimatePresence mode="wait">
             <motion.div
               key={tab}

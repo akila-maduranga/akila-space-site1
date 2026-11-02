@@ -4,6 +4,15 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const DEFAULT_PASSWORD = "admin123";
 
+/** Supabase/PostgREST errors are plain objects, not Error instances. */
+function errMsg(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
 function authorize(req: Request): boolean {
   const auth = req.headers.get("authorization") || "";
   const token = auth.replace(/^Bearer\s+/i, "");
@@ -116,7 +125,7 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Analytics error" },
+      { error: errMsg(err) },
       { status: 500 }
     );
   }

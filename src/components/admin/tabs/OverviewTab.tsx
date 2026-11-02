@@ -86,7 +86,7 @@ function flagFor(code: string): string {
 }
 
 export default function OverviewTab() {
-  const { mode } = useSite();
+  const { mode, readError } = useSite();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [status, setStatus] = useState<ServerStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,7 +179,9 @@ export default function OverviewTab() {
         </Button>
       </div>
 
-      {/* system status — surfaces exactly why edits would (not) save */}
+      {/* system status — surfaces exactly why edits would (not) save,
+          why the public site wouldn't update, or why the dashboard itself
+          is falling back to demo content */}
       {mode === "local" ? (
         <div className="flex items-start gap-3 rounded-2xl border border-[#e8b84a]/30 bg-[#e8b84a]/[0.06] p-4">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e8b84a]" />
@@ -195,27 +197,51 @@ export default function OverviewTab() {
             </p>
           </div>
         </div>
-      ) : status && !status.serviceConfigured ? (
+      ) : status && (!status.serviceConfigured || !status.dbReachable || !status.tablesPresent || !status.writeProbeOk || status.serviceKeyRole === "anon") ? (
         <div className="flex items-start gap-3 rounded-2xl border border-[#ff5d7a]/30 bg-[#ff5d7a]/[0.06] p-4">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5d7a]" />
           <div>
             <p className="font-display text-sm font-semibold text-starlight">
-              Edits are NOT saving — server can&apos;t reach the database
+              Edits are NOT saving —{" "}
+              {!status.serviceConfigured
+                ? "server env vars missing"
+                : status.serviceKeyRole === "anon"
+                  ? "wrong key in SUPABASE_SERVICE_ROLE_KEY"
+                  : !status.dbReachable
+                    ? "can't reach the database"
+                    : !status.tablesPresent
+                      ? "database not set up (run supabase/schema.sql)"
+                      : "the service key can't write"}
             </p>
             <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
               {status.detail}
             </p>
           </div>
         </div>
-      ) : status && !status.dbReachable ? (
-        <div className="flex items-start gap-3 rounded-2xl border border-[#ff5d7a]/30 bg-[#ff5d7a]/[0.06] p-4">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5d7a]" />
+      ) : status && status.anonReadable === false ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-[#e8b84a]/30 bg-[#e8b84a]/[0.06] p-4">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e8b84a]" />
           <div>
             <p className="font-display text-sm font-semibold text-starlight">
-              Database connection failed
+              The public site can&apos;t read your database
             </p>
             <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
               {status.detail}
+            </p>
+          </div>
+        </div>
+      ) : readError ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-[#e8b84a]/30 bg-[#e8b84a]/[0.06] p-4">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e8b84a]" />
+          <div>
+            <p className="font-display text-sm font-semibold text-starlight">
+              This browser can&apos;t read the database — demo content shown
+            </p>
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+              Server-side checks passed, but reads from the browser failed: {readError}. If this
+              persists, make sure NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY were
+              set before the last deploy (NEXT_PUBLIC_* values are baked in at build time), and
+              re-run supabase/schema.sql to restore the read policies.
             </p>
           </div>
         </div>

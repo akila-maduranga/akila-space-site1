@@ -150,6 +150,16 @@ export interface ServerStatus {
   publicConfigured: boolean;
   serviceConfigured: boolean;
   dbReachable: boolean;
+  /** tables from supabase/schema.sql exist */
+  tablesPresent?: boolean;
+  /** harmless 0-row UPDATE with the service key succeeded (writes allowed) */
+  writeProbeOk?: boolean;
+  /** the anon key can SELECT content (the public site's read path) */
+  anonReadable?: boolean;
+  /** JWT role claim of SUPABASE_SERVICE_ROLE_KEY ("service_role" when correct) */
+  serviceKeyRole?: string;
+  /** JWT role claim of NEXT_PUBLIC_SUPABASE_ANON_KEY ("anon" when correct) */
+  anonKeyRole?: string;
   detail: string;
 }
 

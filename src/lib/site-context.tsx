@@ -43,6 +43,13 @@ interface SiteStats {
 interface SiteContextValue {
   loading: boolean;
   mode: "local" | "supabase";
+  /**
+   * Set when a Supabase read failed — the site (and the admin dashboard)
+   * are then showing the BUILT-IN demo content, not database content.
+   * Without this, a broken database looks like "nothing I edit ever
+   * changes" instead of an actionable error.
+   */
+  readError: string | null;
   profile: Profile;
   projects: Project[];
   socialLinks: SocialLink[];
@@ -59,6 +66,7 @@ const SiteContext = createContext<SiteContextValue | null>(null);
 
 export function SiteProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [readError, setReadError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile>(SEED_PROFILE);
   const [projects, setProjects] = useState<Project[]>(SEED_PROJECTS);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(SEED_SOCIAL_LINKS);
@@ -91,8 +99,16 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       setPhotos(ph);
       setPosts(po);
       setPages(pg);
+      setReadError(null);
     } catch (err) {
       console.error("Failed to load site data:", err);
+      // Keep the previous (or seed) content so the site stays presentable,
+      // but remember WHY — the admin dashboard shows this to the owner.
+      setReadError(
+        err instanceof Error
+          ? err.message
+          : "Could not read content from the database"
+      );
     } finally {
       setLoading(false);
     }
@@ -127,6 +143,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const value: SiteContextValue = {
     loading,
     mode: store.mode,
+    readError,
     profile,
     projects,
     socialLinks,
