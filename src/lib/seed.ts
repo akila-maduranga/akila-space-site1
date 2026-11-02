@@ -228,9 +228,9 @@ export const SEED_EXPERIENCES: Experience[] = [
 ];
 
 /**
- * Starter photography gallery. Sample images ship with the site in
+ * Starter photo gallery. Sample images ship with the site in
  * /public/samples — swap in your own Cloudflare R2 URLs from the admin
- * dashboard (Photography tab) whenever you're ready.
+ * dashboard (Gallery tab) whenever you're ready.
  */
 export const SEED_PHOTOS: Photo[] = [
   {
@@ -457,8 +457,8 @@ export const SEED_PAGES: PageSection[] = [
     sort_order: 1,
   },
   {
-    key: "photography",
-    label: "Photography",
+    key: "gallery",
+    label: "Gallery",
     description: "Photos I'm happy with",
     visible: true,
     sort_order: 2,

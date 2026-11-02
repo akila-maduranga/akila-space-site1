@@ -208,7 +208,7 @@ export default function ProfileTab() {
 
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="p-r2" className="font-mono text-xs text-mint">
-            CLOUDFLARE R2 BASE URL <span className="text-muted-foreground">(optional — photography helper)</span>
+            CLOUDFLARE R2 BASE URL <span className="text-muted-foreground">(optional — gallery helper)</span>
           </Label>
           <Input
             id="p-r2"
@@ -218,7 +218,7 @@ export default function ProfileTab() {
             placeholder="https://pub-xxxxxxxx.r2.dev"
           />
           <p className="font-mono text-[10px] text-muted-foreground">
-            with this set, the Photography tab accepts bare filenames (e.g. <span className="text-mint">milkyway.jpg</span>)
+            with this set, the Gallery tab accepts bare filenames (e.g. <span className="text-mint">milkyway.jpg</span>)
           </p>
         </div>
 

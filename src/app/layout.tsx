@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "portfolio",
     "tech enthusiast",
     "hobbyist photographer",
-    "photography",
+    "photo gallery",
     "Sri Lanka",
     "blog",
   ],

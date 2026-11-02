@@ -68,7 +68,7 @@ create table if not exists public.skills (
 );
 alter table public.skills add column if not exists visible boolean not null default true;
 
--- photography gallery (images usually served from Cloudflare R2)
+-- photo gallery (images usually served from Cloudflare R2)
 create table if not exists public.photos (
   id         text primary key,
   title      text not null,
@@ -369,7 +369,7 @@ values
   ('exp-4', 'Built this whole site',          'current obsession',           'Designed it, animated it, wired the database, wrote the words. Somewhere along the way it stopped being a project and became the place I put things I make.',                        '2025', '',     true,  3, true)
 on conflict (id) do nothing;
 
--- starter photography gallery (local sample images that ship with the site;
+-- starter photo gallery (local sample images that ship with the site;
 -- replace them with your Cloudflare R2 URLs from the admin dashboard)
 insert into public.photos (id, title, caption, category, image_url, sort_order, visible)
 values
@@ -419,12 +419,22 @@ insert into public.page_sections (key, label, description, visible, sort_order)
 values
   ('about',      'About',      'Who I am, in slightly too many words',            true, 0),
   ('projects',   'Projects',   'Things I''ve built — some useful, some just fun',  true, 1),
-  ('photography','Photography','Photos I''m happy with',                           true, 2),
+  ('gallery',    'Gallery',    'Photos I''m happy with',                        true, 2),
   ('blog',       'Blog',       'Notes and updates on new stuff I''m doing',        true, 3),
   ('skills',     'Skills',     'Stuff I use — no certificates, just curiosity',   true, 4),
   ('experience', 'Journey',    'How I ended up here — a short timeline',           true, 5),
   ('connect',    'Connect',    'Where to find me online',                         true, 6)
 on conflict (key) do nothing;
+
+-- ═════════════════════════════════════════════════════════════
+--  one-time migration (only for databases set up before the
+--  section was renamed) — flips the old "photography" key
+--  to "gallery" so the site keeps showing the section
+-- ═══════════════════════════════════════════════════════════
+update public.page_sections
+   set key = 'gallery',
+       label = case when label = 'Photography' then 'Gallery' else label end
+ where key = 'photography';
 
 -- ═══════════════════════════════════════════════════════════════════
 --  DONE! Tables, security, tracking functions and starter content

@@ -1,6 +1,6 @@
 # 🌌 Cosmosfolio — Space-Themed Personal Portfolio
 
-A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photography gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
+A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photo gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
 
 ![theme](https://img.shields.io/badge/theme-deep%20space-6331FB) ![stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20Supabase%20%C2%B7%20Tailwind%204-88F9C0)
 
@@ -14,18 +14,18 @@ A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **
 - ⌨️ Typewriter headline that cycles through your roles
 - 🎨 Your exact palette: Onyx Black `#01010D` · Electric Indigo `#6331FB` · Tropical Mint `#88F9C0`
 - 💫 Custom glowing cursor, scroll-reveal animations, tech-grid overlay, glassmorphism cards
-- 📸 **Photography section** — masonry gallery with category filters, hover reveals and a keyboard-navigable lightbox (`←` `→` `Esc`)
+- 📸 **Gallery section** — masonry photo gallery with category filters, hover reveals and a keyboard-navigable lightbox (`←` `→` `Esc`)
 - 📝 **Blog** — write posts in markdown from the dashboard (headings, code blocks, quotes, images); every post gets a shareable `#/blog/<slug>` link
 - 🧭 **Per-page visibility** — flip any section on or off and reorder it right from the dashboard; the public site (and its navbar) update instantly
 - 🎨 **Full-colour brand icons** for social links, bundled from [dheereshag/coloured-icons](https://github.com/dheereshag/coloured-icons) into `public/icons/` (22 platforms: GitHub, LinkedIn, Instagram, X, YouTube, WhatsApp, Telegram, Discord, TikTok, Reddit, Bluesky, Twitch, Behance, Dribbble, Pinterest, ArtStation, Figma and more)
-- Sections: Hero · About · Featured + grid Projects · Photography · Blog · Skills (animated bars + marquee) · Experience timeline · Social links · Footer — **each one can be hidden or reordered from the admin**
+- Sections: Hero · About · Featured + grid Projects · Gallery · Blog · Skills (animated bars + marquee) · Experience timeline · Social links · Footer — **each one can be hidden or reordered from the admin**
 
 **Mission Control** (admin dashboard — visit **`/admin`** directly; there is deliberately **no button or link to it anywhere** on the site, and search engines are told to stay away):
 - 🔐 Password login (default `admin123` — change it!)
 - 🧭 **Pages** — toggle each section visible/hidden and drag-order them; the public site updates instantly
 - 📝 **Blog** — write, edit, hide or delete posts (markdown editor with live preview)
 - 📊 **Telemetry**: unique visitors, page views, clicks, 30-day visitor chart, clicks per channel, top referrers, device breakdown, recent activity
-- ✏️ Full CRUD for **everything**: profile & hero, projects, **photography**, social links, skills, experience
+- ✏️ Full CRUD for **everything**: profile & hero, projects, **gallery**, social links, skills, experience
 
 **Tracking (Supabase)**:
 - Every visit is recorded (unique visitor + page views + referrer + device)
@@ -43,14 +43,14 @@ Open http://localhost:3000 — the site runs in **demo mode** (content & analyti
 
 **Admin**: open **http://localhost:3000/admin** (not linked anywhere on purpose) → password `admin123`.
 
-## ☁️ Photography + Cloudflare R2
+## ☁️ Gallery + Cloudflare R2
 
 The gallery ships with 12 starter photos in `public/samples/`. To serve your own work from R2:
 
 1. **Create a bucket** in the Cloudflare dashboard → R2 → Create bucket (e.g. `akila-photos`)
 2. **Enable public access**: bucket → *Settings* → *Public access* → enable the `r2.dev` subdomain (fine for testing) or connect a custom domain (better for production)
 3. **Upload your photos** (dashboard drag & drop, `wrangler r2 object put`, or any S3-compatible tool)
-4. In the site's admin → **Photography** tab → paste your base URL (e.g. `https://pub-xxxx.r2.dev`) into the **Cloudflare R2 base URL** field and save
+4. In the site's admin → **Gallery** tab → paste your base URL (e.g. `https://pub-xxxx.r2.dev`) into the **Cloudflare R2 base URL** field and save
 5. Add frames — now you only need the **filename** (`milkyway.jpg`); full URLs work anywhere too
 
 Full URLs always work as well, so you can mix R2, local `/samples/…` files and any other public host.
@@ -109,7 +109,7 @@ src/
   components/
     site/                 # StarfieldBackground (atmosphere stack: Vanta net +
                           # nebulas + starfield), VantaBackground, Hero, About,
-                          # Projects, Photography (masonry + lightbox), Blog
+                          # Projects, Gallery (masonry + lightbox), Blog
                           # (markdown + hash routes), Skills, Experience,
                           # SocialLinks, Navbar, Footer...
     admin/                # AdminApp (login + shell) + tabs/
@@ -124,7 +124,7 @@ src/
     site-context.tsx      # loads data, tracks the visit once per session
 public/
   icons/                  # coloured brand SVGs (from dheereshag/coloured-icons)
-  samples/                # 12 starter photography images
+  samples/                # 12 starter gallery images
 supabase/schema.sql       # one-shot database setup
 ```
 

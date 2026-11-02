@@ -401,7 +401,7 @@ export default function BlogTab() {
                       setEditing({ ...editing, tags: e.target.value.split(",").map((t) => t.trimStart()) })
                     }
                     className="border-indigo/25 bg-onyx/50 font-mono text-sm"
-                    placeholder="photography, weekend, notes"
+                    placeholder="gallery, weekend, notes"
                   />
                 </div>
                 <div className="space-y-2">

@@ -69,7 +69,7 @@ export default function PhotosTab() {
   const categories = useMemo(() => {
     const set = new Set<string>();
     photos.forEach((p) => p.category && set.add(p.category));
-    ["Astrophotography", "Landscape", "Portrait", "Street"].forEach((c) => set.add(c));
+    ["Landscape", "Portrait", "Street", "Night Sky"].forEach((c) => set.add(c));
     return Array.from(set);
   }, [photos]);
 
@@ -155,7 +155,7 @@ export default function PhotosTab() {
         <div>
           <h2 className="font-display flex items-center gap-2 text-xl font-bold text-starlight">
             <Camera className="h-5 w-5 text-mint" />
-            Photography Gallery
+            Gallery
           </h2>
           <p className="font-mono text-xs text-muted-foreground">
             {photos.length} frames · served from{" "}

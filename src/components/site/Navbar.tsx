@@ -8,7 +8,7 @@ import type { PageSection } from "@/lib/types";
 const NAV_FALLBACK = [
   { href: "#about", label: "About" },
   { href: "#projects", label: "Projects" },
-  { href: "#photography", label: "Photography" },
+  { href: "#gallery", label: "Gallery" },
   { href: "#blog", label: "Blog" },
   { href: "#connect", label: "Connect" },
 ];

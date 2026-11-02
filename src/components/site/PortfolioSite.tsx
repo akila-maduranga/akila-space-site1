@@ -10,7 +10,7 @@ import Navbar from "./Navbar";
 import Hero from "./Hero";
 import About from "./About";
 import Projects from "./Projects";
-import Photography from "./Photography";
+import Gallery from "./Gallery";
 import Skills from "./Skills";
 import Experience from "./Experience";
 import SocialLinks from "./SocialLinks";
@@ -54,7 +54,7 @@ export default function PortfolioSite() {
       switch (page.key) {
         case "projects":
           return visibleProjects.length > 0;
-        case "photography":
+        case "gallery":
           return visiblePhotos.length > 0;
         case "skills":
           return visibleSkills.length > 0;
@@ -123,12 +123,12 @@ export default function PortfolioSite() {
                 </section>
               );
 
-            case "photography":
+            case "gallery":
               return (
-                <section id="photography" key={page.key} className="py-24 md:py-32">
+                <section id="gallery" key={page.key} className="py-24 md:py-32">
                   <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <SectionHeading index={sectionIndex(pageIndex)} title={page.label} subtitle={page.description} />
-                    <Photography photos={visiblePhotos} />
+                    <Gallery photos={visiblePhotos} />
                   </div>
                 </section>
               );

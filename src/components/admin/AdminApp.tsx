@@ -40,7 +40,7 @@ const TABS = [
   { id: "profile", label: "Profile", icon: UserRound },
   { id: "blog", label: "Blog", icon: PenLine },
   { id: "projects", label: "Projects", icon: FolderGit2 },
-  { id: "photos", label: "Photography", icon: Camera },
+  { id: "photos", label: "Gallery", icon: Camera },
   { id: "links", label: "Social Links", icon: BarChart3 },
   { id: "skills", label: "Skills", icon: Wrench },
   { id: "experience", label: "Journey", icon: Briefcase },
