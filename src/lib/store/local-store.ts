@@ -1,5 +1,6 @@
 "use client";
 
+import { getCountry } from "../geo";
 import type {
   Analytics,
   BlogPost,
@@ -44,15 +45,6 @@ interface Content {
   pages: PageSection[];
 }
 
-interface VisitRow {
-  visitor_id: string;
-  first_seen: string;
-  last_seen: string;
-  page_views: number;
-  referrer: string;
-  device: string;
-}
-
 interface PageviewRow {
   viewed_at: string;
   visitor_id: string;
@@ -64,6 +56,17 @@ interface ClickRow {
   platform: string;
   clicked_at: string;
   visitor_id: string;
+  country?: string;
+}
+
+interface VisitRow {
+  visitor_id: string;
+  first_seen: string;
+  last_seen: string;
+  page_views: number;
+  referrer: string;
+  device: string;
+  country?: string;
 }
 
 interface AnalyticsData {
@@ -252,13 +255,17 @@ export class LocalStore implements DataStore {
   }
 
   async trackVisit(): Promise<void> {
-    const data = this.getAnalyticsData();
+    const [data, country] = await Promise.all([Promise.resolve(this.getAnalyticsData()), getCountry()]);
     const vid = getVisitorId();
     const now = new Date().toISOString();
     const existing = data.visitors.find((v) => v.visitor_id === vid);
     if (existing) {
       existing.last_seen = now;
       existing.page_views += 1;
+      // upgrade "unknown" to a real country if we learn it later
+      if (!existing.country || existing.country === "unknown") {
+        existing.country = country;
+      }
     } else {
       data.visitors.push({
         visitor_id: vid,
@@ -267,6 +274,7 @@ export class LocalStore implements DataStore {
         page_views: 1,
         referrer: getReferrer(),
         device: detectDevice(),
+        country,
       });
     }
     data.pageviews.push({ viewed_at: now, visitor_id: vid });
@@ -274,6 +282,7 @@ export class LocalStore implements DataStore {
   }
 
   async trackLinkClick(link: SocialLink): Promise<void> {
+    const country = await getCountry();
     const data = this.getAnalyticsData();
     data.link_clicks.push({
       id: uid(),
@@ -281,6 +290,7 @@ export class LocalStore implements DataStore {
       platform: link.platform,
       clicked_at: new Date().toISOString(),
       visitor_id: getVisitorId(),
+      country,
     });
     writeJSON(ANALYTICS_KEY, data);
 
@@ -450,10 +460,21 @@ export class LocalStore implements DataStore {
       .map(([device, count]) => ({ device, count }))
       .sort((a, b) => b.count - a.count);
 
+    // clicks by country (anonymous, from the /api/geo edge lookup)
+    const countryMap = new Map<string, number>();
+    for (const c of data.link_clicks) {
+      const key = c.country || "unknown";
+      countryMap.set(key, (countryMap.get(key) || 0) + 1);
+    }
+    const topCountries = Array.from(countryMap.entries())
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
     const recentClicks = [...data.link_clicks]
       .sort((a, b) => (a.clicked_at < b.clicked_at ? 1 : -1))
       .slice(0, 12)
-      .map((c) => ({ platform: c.platform, clicked_at: c.clicked_at }));
+      .map((c) => ({ platform: c.platform, clicked_at: c.clicked_at, country: c.country || "unknown" }));
 
     return {
       totalVisitors: data.visitors.length,
@@ -462,6 +483,7 @@ export class LocalStore implements DataStore {
       visitorsByDay,
       clicksByLink,
       topReferrers,
+      topCountries,
       recentClicks,
       deviceBreakdown,
     };

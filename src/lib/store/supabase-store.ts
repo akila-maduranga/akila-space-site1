@@ -1,6 +1,7 @@
 "use client";
 
 import { getSupabaseClient } from "../supabase";
+import { getCountry } from "../geo";
 import type {
   Analytics,
   BlogPost,
@@ -171,20 +172,24 @@ export class SupabaseStore implements DataStore {
   async trackVisit(): Promise<void> {
     const sb = getSupabaseClient();
     if (!sb) return;
+    const [country] = await Promise.all([getCountry()]);
     await sb.rpc("track_visit", {
       p_visitor_id: getVisitorId(),
       p_referrer: getReferrer(),
       p_device: detectDevice(),
+      p_country: country,
     });
   }
 
   async trackLinkClick(link: SocialLink): Promise<void> {
     const sb = getSupabaseClient();
     if (!sb) return;
+    const country = await getCountry();
     await sb.rpc("track_link_click", {
       p_link_id: link.id,
       p_platform: link.platform,
       p_visitor_id: getVisitorId(),
+      p_country: country,
     });
   }
 

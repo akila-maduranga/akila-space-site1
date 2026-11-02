@@ -37,7 +37,7 @@ export async function GET(req: Request) {
     since.setDate(since.getDate() - 29);
     const sinceStr = since.toISOString().slice(0, 10);
 
-    const [visitorsRes, clicksRes, linksRes, byDayRes, byLinkRes, referrersRes, recentRes, deviceRes] =
+    const [visitorsRes, clicksRes, linksRes, byDayRes, byLinkRes, referrersRes, recentRes, deviceRes, countryRes] =
       await Promise.all([
         sb.from("visitors").select("visitor_id, page_views", { count: "exact" }),
         sb.from("link_clicks").select("id", { count: "exact", head: true }),
@@ -46,10 +46,11 @@ export async function GET(req: Request) {
         sb.rpc("clicks_by_link", { p_days: 30 }),
         sb.rpc("top_referrers", { p_days: 30, p_limit: 6 }),
         sb.from("link_clicks")
-          .select("platform, clicked_at")
+          .select("platform, clicked_at, country")
           .order("clicked_at", { ascending: false })
           .limit(12),
         sb.rpc("device_breakdown", { p_days: 30 }),
+        sb.rpc("top_countries", { p_days: 30 }),
       ]);
 
     const visitorsData = visitorsRes.data || [];
@@ -99,13 +100,18 @@ export async function GET(req: Request) {
           count: Number(r.count),
         })
       ),
-      recentClicks: (recentRes.data || []).map((c: { platform: string; clicked_at: string }) => ({
+      recentClicks: (recentRes.data || []).map((c: { platform: string; clicked_at: string; country?: string }) => ({
         platform: c.platform,
         clicked_at: c.clicked_at,
+        country: c.country || "unknown",
       })),
       deviceBreakdown: (deviceRes.data || []).map((d: { device: string; count: number }) => ({
         device: d.device,
         count: Number(d.count),
+      })),
+      topCountries: (countryRes.data || []).map((c: { country: string; count: number }) => ({
+        country: c.country || "unknown",
+        count: Number(c.count),
       })),
     });
   } catch (err) {

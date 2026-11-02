@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   Eye,
+  Globe,
   Link2,
   Loader2,
   Monitor,
   RefreshCw,
+  ShieldAlert,
+  ShieldCheck,
   Smartphone,
   Tablet,
   Users,
@@ -25,8 +28,9 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import type { Analytics } from "@/lib/types";
+import type { Analytics, ServerStatus } from "@/lib/types";
 import { getStore } from "@/lib/store";
+import { useSite } from "@/lib/site-context";
 import { PlatformIcon } from "@/lib/icons";
 
 const TOOLTIP_STYLE = {
@@ -74,8 +78,17 @@ function StatCard({
   );
 }
 
+function flagFor(code: string): string {
+  if (!/^[a-z]{2}$/.test(code)) return "";
+  return String.fromCodePoint(
+    ...[...code.toUpperCase()].map((c) => 127397 + c.charCodeAt(0))
+  );
+}
+
 export default function OverviewTab() {
+  const { mode } = useSite();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [status, setStatus] = useState<ServerStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -92,8 +105,23 @@ export default function OverviewTab() {
     }
   };
 
+  // server config health — tells you exactly WHY edits wouldn't save
+  const loadStatus = async () => {
+    try {
+      const token =
+        typeof window !== "undefined" ? sessionStorage.getItem("cosmosfolio_admin_token") : null;
+      const res = await fetch("/api/admin/status", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) setStatus((await res.json()) as ServerStatus);
+    } catch {
+      /* status is advisory only */
+    }
+  };
+
   useEffect(() => {
     load();
+    loadStatus();
   }, []);
 
   if (loading && !analytics) {
@@ -150,6 +178,60 @@ export default function OverviewTab() {
           refresh
         </Button>
       </div>
+
+      {/* system status — surfaces exactly why edits would (not) save */}
+      {mode === "local" ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-[#e8b84a]/30 bg-[#e8b84a]/[0.06] p-4">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e8b84a]" />
+          <div>
+            <p className="font-display text-sm font-semibold text-starlight">
+              Demo mode — edits save to this browser only
+            </p>
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+              The site is running without Supabase env vars, so content lives in localStorage on
+              this device. To persist edits for every visitor, set the four variables from{" "}
+              <code className="text-mint">.env.example</code> in Vercel → Settings → Environment
+              Variables and redeploy.
+            </p>
+          </div>
+        </div>
+      ) : status && !status.serviceConfigured ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-[#ff5d7a]/30 bg-[#ff5d7a]/[0.06] p-4">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5d7a]" />
+          <div>
+            <p className="font-display text-sm font-semibold text-starlight">
+              Edits are NOT saving — server can&apos;t reach the database
+            </p>
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+              {status.detail}
+            </p>
+          </div>
+        </div>
+      ) : status && !status.dbReachable ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-[#ff5d7a]/30 bg-[#ff5d7a]/[0.06] p-4">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5d7a]" />
+          <div>
+            <p className="font-display text-sm font-semibold text-starlight">
+              Database connection failed
+            </p>
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+              {status.detail}
+            </p>
+          </div>
+        </div>
+      ) : mode === "supabase" && status ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-mint/25 bg-mint/[0.05] p-4">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-mint" />
+          <div>
+            <p className="font-display text-sm font-semibold text-starlight">
+              Systems nominal — Supabase connected
+            </p>
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+              {status.detail}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} label="unique visitors" value={analytics.totalVisitors} hint="signals detected" delay={0} />
@@ -283,6 +365,46 @@ export default function OverviewTab() {
           </div>
 
           <div className="glass glow-border rounded-2xl p-5">
+            <h3 className="font-display mb-4 flex items-center gap-2 text-sm font-semibold text-starlight">
+              <Globe className="h-3.5 w-3.5 text-mint" />
+              Signal Origins
+            </h3>
+            <div className="space-y-3">
+              {analytics.topCountries?.length ? (
+                analytics.topCountries.map((c) => {
+                  const max = analytics.topCountries[0].count || 1;
+                  const flag = flagFor(c.country);
+                  return (
+                    <div key={c.country}>
+                      <div className="mb-1 flex justify-between font-mono text-[11px]">
+                        <span className="flex items-center gap-1.5 text-starlight/90">
+                          {flag ? (
+                            <span aria-hidden>{flag}</span>
+                          ) : (
+                            <Globe className="h-3 w-3 text-muted-foreground" />
+                          )}
+                          {c.country === "unknown" ? "unidentified" : c.country.toUpperCase()}
+                        </span>
+                        <span className="text-muted-foreground">{c.count} click{c.count === 1 ? "" : "s"}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-indigo to-mint"
+                          style={{ width: `${(c.count / max) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="font-mono text-xs text-muted-foreground">
+                  no country data yet — it appears after the first tracked clicks
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="glass glow-border rounded-2xl p-5">
             <h3 className="font-display mb-4 text-sm font-semibold text-starlight">Vessels</h3>
             <div className="flex gap-3">
               {analytics.deviceBreakdown.length === 0 ? (
@@ -322,6 +444,14 @@ export default function OverviewTab() {
                     <span className="flex items-center gap-2 text-starlight/90">
                       <PlatformIcon platform={c.platform} className="h-3.5 w-3.5 text-mint" />
                       {c.platform}
+                      {c.country ? (
+                        <span
+                          className="rounded border border-indigo/20 bg-indigo/[0.08] px-1 py-px text-[9px] uppercase text-indigo-soft"
+                          title={`origin: ${c.country}`}
+                        >
+                          {flagFor(c.country) || "??"} {c.country}
+                        </span>
+                      ) : null}
                     </span>
                     <time className="text-muted-foreground">
                       {new Date(c.clicked_at).toLocaleString(undefined, {

@@ -2,7 +2,7 @@
 
 A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photo gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
 
-> **You are on v2.1** — quick check: `package.json` says `"version": "2.1.0"` and its `devDependencies` include `@types/node`. v2.1 fixes the Vercel build error "Please install @types/node"; v2.0 fixed a `.gitignore` bug that silently kept `local-store.ts` out of Git pushes and a Supabase `42P17` error in `schema.sql`.
+> **You are on v2.2** — quick check: `package.json` says `"version": "2.2.0"`. v2.2 fixes the invisible animated background (an opaque wrapper was painting over the starfield), adds a **system status panel** to the admin (it tells you exactly when edits aren't saving and why), **country tracking** on clicks, a **3-strikes 24-hour login lockout**, and a full set of security headers. v2.1 fixed the missing `@types/node` build error; v2.0 fixed the `.gitignore`/`local-store.ts` deploy bug and the Supabase `42P17` schema error.
 
 ![theme](https://img.shields.io/badge/theme-deep%20space-6331FB) ![stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20Supabase%20%C2%B7%20Tailwind%204-88F9C0)
 
@@ -23,15 +23,16 @@ A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **
 - Sections: Hero · About · Featured + grid Projects · Gallery · Blog · Skills (animated bars + marquee) · Experience timeline · Social links · Footer — **each one can be hidden or reordered from the admin**
 
 **Mission Control** (admin dashboard — visit **`/admin`** directly; there is deliberately **no button or link to it anywhere** on the site, and search engines are told to stay away):
-- 🔐 Password login (default `admin123` — change it!)
+- 🔐 Password login (default `admin123` — change it!) — **3 wrong passwords locks that device out for 24 hours**
+- 🩺 **System status panel** — the dashboard tells you if it's running in demo mode, whether the server can reach Supabase, and exactly which env var to fix if edits aren't saving
 - 🧭 **Pages** — toggle each section visible/hidden and drag-order them; the public site updates instantly
 - 📝 **Blog** — write, edit, hide or delete posts (markdown editor with live preview)
-- 📊 **Telemetry**: unique visitors, page views, clicks, 30-day visitor chart, clicks per channel, top referrers, device breakdown, recent activity
+- 📊 **Telemetry**: unique visitors, page views, clicks, 30-day visitor chart, clicks per channel, **clicks per country (Signal Origins)**, top referrers, device breakdown, recent activity
 - ✏️ Full CRUD for **everything**: profile & hero, projects, **gallery**, social links, skills, experience
 
 **Tracking (Supabase)**:
-- Every visit is recorded (unique visitor + page views + referrer + device)
-- Every social link click is recorded and attributed to a link
+- Every visit is recorded (unique visitor + page views + referrer + device + country)
+- Every social link click is recorded and attributed to a link **and a country** (from the Vercel/Cloudflare edge header — no IP address is ever stored; the dashboard's *Signal Origins* card shows clicks per country with flags)
 - Analytics write through secure Postgres RPCs; content writes only via server-side API routes with the service-role key
 
 ## 🚀 Quick start (local)
@@ -63,7 +64,7 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 2. Open **SQL Editor → New query**, paste the whole of [`supabase/schema.sql`](supabase/schema.sql), press **Run**
    - creates all tables (incl. `posts` + `page_sections`), row-level security, tracking functions and starter content
    - the script is **idempotent** — if an earlier run failed halfway, just run it again; existing rows are skipped
-   - **fixed in v2.0**: the `pageviews.view_date` column no longer uses a generated expression (Postgres rejected it with `42P17: generation expression is not immutable`); it is now a plain column with a UTC default
+   - **Upgrading from an earlier version?** re-run the whole file — it is idempotent. v2.2 adds the `country` column on `visitors`/`link_clicks`, the `admin_auth_attempts` table (login lockout), and the `top_countries()` RPC
 3. Copy `.env.example` → `.env.local` and fill in, from **Supabase Dashboard → Settings → API**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -100,6 +101,8 @@ git ls-files | grep local-store
 
 Then open your site, head to **`/admin`**, log in with your `ADMIN_PASSWORD`, and replace the demo persona with your own name, links, projects, photos and posts — all edits save straight to Supabase.
 
+**“My edits don't show up / don't save”?** Open the admin dashboard — the **system status panel** at the top tells you exactly what's wrong. The two usual causes: (1) missing `SUPABASE_SERVICE_ROLE_KEY` on Vercel (the site reads fine but every admin write is rejected), or (2) the site is still in demo mode because the `NEXT_PUBLIC_*` vars weren't set **before** the last build — set all four vars and **redeploy** (public env vars are baked in at build time).
+
 ## 🔐 Security model
 
 | What | Who | How |
@@ -107,8 +110,9 @@ Then open your site, head to **`/admin`**, log in with your `ADMIN_PASSWORD`, an
 | Read site content | everyone | anon key + RLS `select` policies |
 | Record visits / clicks | everyone | RPCs (`security definer`, fixed logic) |
 | Edit content / read analytics | admin only | Next.js API routes + `ADMIN_PASSWORD` session token + service-role key |
+| Brute-force the admin password | blocked | 3 failures → 24h lockout per device (DB-backed, salted IP hash) |
 
-The service-role key never reaches the browser. Tracking RPCs accept only the values they need and cannot fabricate content changes.
+The service-role key never reaches the browser. Tracking RPCs accept only the values they need and cannot fabricate content changes. Every response ships with `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, HSTS and a tuned `Content-Security-Policy`; `/admin` additionally sends `X-Robots-Tag: noindex` and is excluded in `robots.txt`.
 
 ## 🧭 Project structure
 

@@ -127,7 +127,8 @@ create table if not exists public.visitors (
   last_seen   timestamptz not null default now(),
   page_views  int not null default 1,
   referrer    text not null default 'direct',
-  device      text not null default 'desktop'
+  device      text not null default 'desktop',
+  country     text not null default 'unknown'
 );
 create index if not exists visitors_last_seen_idx on public.visitors (last_seen desc);
 create index if not exists visitors_referrer_idx on public.visitors (referrer);
@@ -149,10 +150,28 @@ create table if not exists public.link_clicks (
   link_id    text not null default '',
   platform   text not null default 'other',
   clicked_at timestamptz not null default now(),
-  visitor_id text not null default ''
+  visitor_id text not null default '',
+  country    text not null default 'unknown'
 );
 create index if not exists link_clicks_clicked_at_idx on public.link_clicks (clicked_at desc);
 create index if not exists link_clicks_platform_idx on public.link_clicks (platform);
+create index if not exists link_clicks_country_idx on public.link_clicks (country);
+
+-- admin login brute-force protection (v2.2): 3 failed passwords → 24h lock.
+-- only the service role touches this table (no RLS policies for anon);
+-- it stores a salted SHA-256 hash of the IP, never the IP itself.
+create table if not exists public.admin_auth_attempts (
+  ip_hash      text primary key,
+  failed_count int not null default 0,
+  locked_until timestamptz,
+  last_attempt_at timestamptz not null default now()
+);
+alter table public.admin_auth_attempts enable row level security;
+revoke all on public.admin_auth_attempts from anon, authenticated;
+
+-- upgrades from earlier versions: add the country column if it's missing
+alter table public.visitors    add column if not exists country text not null default 'unknown';
+alter table public.link_clicks add column if not exists country text not null default 'unknown';
 
 -- ───────────────────────────────────────────────
 --  ROW LEVEL SECURITY
@@ -197,7 +216,7 @@ create policy "public read page_sections" on public.page_sections for select to 
 --  security definer → they bypass RLS safely with fixed logic
 -- ───────────────────────────────────────────────
 
-create or replace function public.track_visit(p_visitor_id text, p_referrer text, p_device text)
+create or replace function public.track_visit(p_visitor_id text, p_referrer text, p_device text, p_country text default 'unknown')
 returns void
 language plpgsql
 security definer
@@ -208,25 +227,32 @@ begin
     return;
   end if;
 
-  insert into public.visitors (visitor_id, referrer, device, page_views)
-  values (p_visitor_id, coalesce(nullif(p_referrer, ''), 'direct'), coalesce(nullif(p_device, ''), 'desktop'), 1)
+  insert into public.visitors (visitor_id, referrer, device, page_views, country)
+  values (p_visitor_id, coalesce(nullif(p_referrer, ''), 'direct'), coalesce(nullif(p_device, ''), 'desktop'), 1, coalesce(nullif(p_country, ''), 'unknown'))
   on conflict (visitor_id) do update
     set last_seen  = now(),
-        page_views = public.visitors.page_views + 1;
+        page_views = public.visitors.page_views + 1,
+        country    = case when public.visitors.country = 'unknown'
+                          then coalesce(nullif(p_country, ''), 'unknown')
+                          else public.visitors.country end;
 
   insert into public.pageviews (visitor_id) values (p_visitor_id);
 end;
 $$;
 
-create or replace function public.track_link_click(p_link_id text, p_platform text, p_visitor_id text)
+-- (re)create with the country parameter — drop the old 3-arg forms
+-- first so only one version of each function exists.
+drop function if exists public.track_visit(text, text, text);
+drop function if exists public.track_link_click(text, text, text);
+create or replace function public.track_link_click(p_link_id text, p_platform text, p_visitor_id text, p_country text default 'unknown')
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
 begin
-  insert into public.link_clicks (link_id, platform, visitor_id)
-  values (coalesce(p_link_id, ''), coalesce(nullif(p_platform, ''), 'other'), coalesce(p_visitor_id, ''));
+  insert into public.link_clicks (link_id, platform, visitor_id, country)
+  values (coalesce(p_link_id, ''), coalesce(nullif(p_platform, ''), 'other'), coalesce(p_visitor_id, ''), coalesce(nullif(p_country, ''), 'unknown'));
 
   if p_link_id is not null and p_link_id <> '' then
     update public.social_links
@@ -305,9 +331,26 @@ as $$
   order by count desc
 $$;
 
--- allow anonymous visitors to run the tracking RPCs
-grant execute on function public.track_visit(text, text, text)      to anon, authenticated;
-grant execute on function public.track_link_click(text, text, text) to anon, authenticated;
+-- clicks by country (anonymous, ISO-3166 alpha-2 lowercase or 'unknown')
+create or replace function public.top_countries(p_days int default 30, p_limit int default 8)
+returns table (country text, count bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select country, count(*)::bigint as count
+  from public.link_clicks
+  where clicked_at >= now() - (greatest(coalesce(p_days, 30), 1) || ' days')::interval
+  group by country
+  order by count desc
+  limit greatest(coalesce(p_limit, 8), 1)
+$$;
+
+-- allow anonymous visitors to run the tracking RPCs (4-arg signatures;
+-- country defaults to 'unknown' when a client omits it)
+grant execute on function public.track_visit(text, text, text, text)      to anon, authenticated;
+grant execute on function public.track_link_click(text, text, text, text) to anon, authenticated;
 
 -- ───────────────────────────────────────────────
 --  SEED CONTENT (safe to re-run — skips existing rows)

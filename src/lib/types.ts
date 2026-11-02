@@ -140,8 +140,17 @@ export interface Analytics {
   visitorsByDay: DayStat[];
   clicksByLink: ClickStat[];
   topReferrers: ReferrerStat[];
-  recentClicks: { platform: string; clicked_at: string }[];
+  topCountries: { country: string; count: number }[];
+  recentClicks: { platform: string; clicked_at: string; country?: string }[];
   deviceBreakdown: { device: string; count: number }[];
+}
+
+export interface ServerStatus {
+  ok: boolean;
+  publicConfigured: boolean;
+  serviceConfigured: boolean;
+  dbReachable: boolean;
+  detail: string;
 }
 
 export type StoreMode = "local" | "supabase";
