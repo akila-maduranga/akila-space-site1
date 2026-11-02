@@ -2,6 +2,8 @@
 
 A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photo gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
 
+> **You are on v2.0** — quick check: `src/components/site/Gallery.tsx` exists (not `Photography.tsx`) and `src/lib/store/local-store.ts` exists. v2.0 fixes a `.gitignore` bug that silently kept `local-store.ts` out of Git pushes (the Vercel "Can't resolve './local-store'" error) and a Supabase `42P17` error in `schema.sql`.
+
 ![theme](https://img.shields.io/badge/theme-deep%20space-6331FB) ![stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20Supabase%20%C2%B7%20Tailwind%204-88F9C0)
 
 ## ✨ What's inside
@@ -60,6 +62,8 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 1. Create a free project at [supabase.com](https://supabase.com)
 2. Open **SQL Editor → New query**, paste the whole of [`supabase/schema.sql`](supabase/schema.sql), press **Run**
    - creates all tables (incl. `posts` + `page_sections`), row-level security, tracking functions and starter content
+   - the script is **idempotent** — if an earlier run failed halfway, just run it again; existing rows are skipped
+   - **fixed in v2.0**: the `pageviews.view_date` column no longer uses a generated expression (Postgres rejected it with `42P17: generation expression is not immutable`); it is now a plain column with a UTC default
 3. Copy `.env.example` → `.env.local` and fill in, from **Supabase Dashboard → Settings → API**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -68,6 +72,8 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 5. `npm run dev` — the site now reads/writes Supabase and tracking is live
 
 ## ▲ Deploy to Vercel
+
+**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: the folder contains `src/components/site/Gallery.tsx` and `src/lib/store/local-store.ts`.
 
 **Option A — CLI**
 
@@ -85,6 +91,13 @@ vercel --prod   # production deploy
 4. Add the 4 environment variables from `.env.example`
 5. Deploy 🚀
 
+**If you already pushed an older copy of this project to GitHub** — the old `.gitignore` contained a `local-*` rule that silently excluded `src/lib/store/local-store.ts` from commits (that's what caused Vercel's `Module not found: Can't resolve './local-store'`). Delete the old repo (or replace its contents with this fresh folder — `git rm -r --cached .` first if reusing the same clone), re-commit, push, and redeploy. After committing, verify with:
+
+```bash
+git ls-files | grep local-store
+# must print: src/lib/store/local-store.ts
+```
+
 Then open your site, head to **`/admin`**, log in with your `ADMIN_PASSWORD`, and replace the demo persona with your own name, links, projects, photos and posts — all edits save straight to Supabase.
 
 ## 🔐 Security model
@@ -93,7 +106,6 @@ Then open your site, head to **`/admin`**, log in with your `ADMIN_PASSWORD`, an
 |---|---|---|
 | Read site content | everyone | anon key + RLS `select` policies |
 | Record visits / clicks | everyone | RPCs (`security definer`, fixed logic) |
-| Read public counters | everyone | `get_public_stats()` RPC (totals only) |
 | Edit content / read analytics | admin only | Next.js API routes + `ADMIN_PASSWORD` session token + service-role key |
 
 The service-role key never reaches the browser. Tracking RPCs accept only the values they need and cannot fabricate content changes.

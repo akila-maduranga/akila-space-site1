@@ -136,7 +136,11 @@ create table if not exists public.pageviews (
   id          uuid primary key default gen_random_uuid(),
   viewed_at   timestamptz not null default now(),
   visitor_id  text not null default '',
-  view_date   date generated always as (viewed_at::date) stored
+  -- plain column with a UTC default. (A GENERATED column can't be used here:
+  -- casting timestamptz -> date depends on the session timezone, so Postgres
+  -- rejects it with "generation expression is not immutable" (42P17).
+  -- A DEFAULT is allowed to be timezone-dependent, so this is the safe form.)
+  view_date   date not null default ((now() at time zone 'UTC')::date)
 );
 create index if not exists pageviews_date_idx on public.pageviews (view_date);
 
@@ -249,9 +253,11 @@ as $$
            where pv.view_date = gs::date)::bigint as visitors,
          (select count(*) from public.pageviews pv
            where pv.view_date = gs::date)::bigint as views
+  -- series is anchored on UTC midnight so the days line up with view_date
+  -- (and with the dashboard's UTC date keys) whatever the session timezone
   from generate_series(
-    current_date - (greatest(coalesce(p_days, 30), 1) - 1),
-    current_date,
+    (now() at time zone 'UTC')::date - (greatest(coalesce(p_days, 30), 1) - 1),
+    (now() at time zone 'UTC')::date,
     interval '1 day'
   ) gs
 $$;
