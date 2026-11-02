@@ -130,6 +130,17 @@ create table if not exists public.facts (
   visible    boolean not null default true
 );
 
+-- hero terminal window lines ("$ whoami", "$ cat about.txt", ...) —
+-- edited from the admin dashboard's Terminal tab (v2.4)
+create table if not exists public.terminal_lines (
+  id         text primary key,
+  command    text not null,
+  output     text not null default '',
+  color      text not null default 'starlight',
+  sort_order int not null default 0,
+  visible    boolean not null default true
+);
+
 -- ───────────────────────────────────────────────
 --  ANALYTICS TABLES (written via RPCs only)
 -- ───────────────────────────────────────────────
@@ -212,6 +223,8 @@ alter table public.experiences    enable row level security;
 alter table public.photos         enable row level security;
 alter table public.posts          enable row level security;
 alter table public.page_sections  enable row level security;
+alter table public.facts          enable row level security;
+alter table public.terminal_lines enable row level security;
 alter table public.visitors       enable row level security;
 alter table public.pageviews      enable row level security;
 alter table public.link_clicks    enable row level security;
@@ -225,6 +238,7 @@ drop policy if exists "public read photos"        on public.photos;
 drop policy if exists "public read posts"         on public.posts;
 drop policy if exists "public read page_sections" on public.page_sections;
 drop policy if exists "public read facts"         on public.facts;
+drop policy if exists "public read terminal_lines" on public.terminal_lines;
 
 create policy "public read profile"       on public.profile       for select to anon, authenticated using (true);
 create policy "public read projects"      on public.projects      for select to anon, authenticated using (true);
@@ -235,6 +249,7 @@ create policy "public read photos"        on public.photos        for select to 
 create policy "public read posts"         on public.posts         for select to anon, authenticated using (true);
 create policy "public read page_sections" on public.page_sections for select to anon, authenticated using (true);
 create policy "public read facts"         on public.facts         for select to anon, authenticated using (true);
+create policy "public read terminal_lines" on public.terminal_lines for select to anon, authenticated using (true);
 
 -- ───────────────────────────────────────────────
 --  TRACKING RPCs (callable with the anon key)
@@ -508,6 +523,20 @@ values
   ('fact-3', 'moonstar', 'weekend status', 'out shooting somewhere in the hills',  2, true),
   ('fact-4', 'coffee',   'fuel of choice', 'plain tea, three sugars',               3, true)
 on conflict (id) do nothing;
+
+-- starter hero terminal lines (edit them from the admin dashboard → Terminal;
+-- {{photos}} and friends are replaced with live numbers on the site)
+insert into public.terminal_lines (id, command, output, color, sort_order, visible)
+values
+  ('term-1', 'whoami',                  'enthusiast · tinkerer · guy with a camera',        'starlight', 0, true),
+  ('term-2', 'cat about.txt',           '"not a pro — just really into this stuff"',      'indigo',    1, true),
+  ('term-3', 'ls ./current_obsessions', 'nextjs/  cameras/  selfhosting/  tea/',            'starlight', 2, true),
+  ('term-4', 'ls ./gallery | wc -l',    '✦ {{photos}} photos and counting ✦',             'mint',      3, true)
+on conflict (id) do nothing;
+
+-- UPGRADE PATH (databases set up before v2.4): the terminal window title
+-- is a new optional profile column — add it before the app writes to it.
+alter table public.profile add column if not exists terminal_title text not null default '';
 
 -- ═════════════════════════════════════════════════════════════
 --  one-time migration (only for databases set up before the

@@ -81,6 +81,13 @@ const COLOURED: Record<string, PlatformMeta> = {
   artstation: { label: "ArtStation", color: "#13AFF0", coloured: true },
   letterboxd: { label: "Letterboxd", color: "#00E054", coloured: true },
   figma: { label: "Figma", color: "#F24E1E", coloured: true },
+  spotify: { label: "Spotify", color: "#1DB954", coloured: true },
+  lastfm: { label: "Last.fm", color: "#D51007", coloured: true },
+  soundcloud: { label: "SoundCloud", color: "#FF5500", coloured: true },
+  steam: { label: "Steam", color: "#66c0f4", coloured: true },
+  devto: { label: "dev.to", color: "#ffffff", coloured: true },
+  medium: { label: "Medium", color: "#ffffff", coloured: true },
+  threads: { label: "Threads", color: "#ffffff", coloured: true },
 };
 
 const GENERIC: Record<string, PlatformMeta> = {

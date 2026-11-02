@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { SEED_EXPERIENCES, SEED_FACTS, SEED_PAGES, SEED_PHOTOS, SEED_POSTS, SEED_PROFILE, SEED_PROJECTS, SEED_SKILLS, SEED_SOCIAL_LINKS } from "@/lib/seed";
+import { SEED_EXPERIENCES, SEED_FACTS, SEED_PAGES, SEED_PHOTOS, SEED_POSTS, SEED_PROFILE, SEED_PROJECTS, SEED_SKILLS, SEED_SOCIAL_LINKS, SEED_TERMINAL_LINES } from "@/lib/seed";
 
 const DEFAULT_PASSWORD = "admin123";
 
@@ -72,7 +72,13 @@ export async function POST(req: Request) {
           ...rest,
           roles: rest.roles,
         };
-        const { error } = await sb.from("profile").upsert({ id: id || "profile-1", ...row });
+        // terminal_title only exists after the v2.4 schema — send it only
+        // when present so older databases don't reject the whole upsert.
+        const { terminal_title, ...base } = row as typeof row & { terminal_title?: string };
+        if (typeof terminal_title === "string" && terminal_title.trim()) {
+          (base as Record<string, unknown>).terminal_title = terminal_title;
+        }
+        const { error } = await sb.from("profile").upsert({ id: id || "profile-1", ...base });
         if (error) throw error;
         return NextResponse.json({ ok: true });
       }
@@ -204,6 +210,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true });
       }
 
+      case "save_terminal_line": {
+        const t = payload as unknown as (typeof SEED_TERMINAL_LINES)[number];
+        const { error } = await sb.from("terminal_lines").upsert({
+          ...t,
+          id: t.id || slugId("term"),
+          color: ["mint", "starlight", "indigo"].includes(t.color) ? t.color : "starlight",
+        });
+        if (error) throw error;
+        return NextResponse.json({ ok: true, id: t.id || slugId("term") });
+      }
+
+      case "delete_terminal_line": {
+        const { error } = await sb.from("terminal_lines").delete().eq("id", String(payload.id));
+        if (error) throw error;
+        return NextResponse.json({ ok: true });
+      }
+
       case "seed_content": {
         // Insert seed rows only if the tables are empty
         const { count } = await sb.from("profile").select("id", { count: "exact", head: true });
@@ -257,6 +280,12 @@ export async function POST(req: Request) {
           .select("id", { count: "exact", head: true });
         if ((factCount ?? 0) === 0) {
           await sb.from("facts").insert(SEED_FACTS);
+        }
+        const { count: termCount } = await sb
+          .from("terminal_lines")
+          .select("id", { count: "exact", head: true });
+        if ((termCount ?? 0) === 0) {
+          await sb.from("terminal_lines").insert(SEED_TERMINAL_LINES);
         }
         return NextResponse.json({ ok: true });
       }

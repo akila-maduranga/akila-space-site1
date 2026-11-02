@@ -2,7 +2,7 @@
 
 import { getSupabaseClient } from "../supabase";
 import { getCountry } from "../geo";
-import { SEED_FACTS } from "../seed";
+import { SEED_FACTS, SEED_TERMINAL_LINES } from "../seed";
 import type {
   Analytics,
   BlogPost,
@@ -15,6 +15,7 @@ import type {
   Project,
   Skill,
   SocialLink,
+  TerminalLine,
 } from "../types";
 
 function detectDevice(): string {
@@ -190,6 +191,23 @@ export class SupabaseStore implements DataStore {
     return (data || []) as Fact[];
   }
 
+  async getTerminalLines(): Promise<TerminalLine[]> {
+    const sb = getSupabaseClient();
+    if (!sb) throw new Error("Supabase not configured");
+    const { data, error } = await sb
+      .from("terminal_lines")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) {
+      // same upgrade path as facts — table added in v2.4 of the schema
+      if (/PGRST205|does not exist|Could not find the table/i.test(error.message)) {
+        return SEED_TERMINAL_LINES;
+      }
+      throw error;
+    }
+    return (data || []) as TerminalLine[];
+  }
+
   async trackVisit(): Promise<void> {
     const sb = getSupabaseClient();
     if (!sb) return;
@@ -287,6 +305,14 @@ export class SupabaseStore implements DataStore {
 
   async deleteFact(id: string): Promise<void> {
     await this.mutate("delete_fact", { id });
+  }
+
+  async saveTerminalLine(line: TerminalLine): Promise<void> {
+    await this.mutate("save_terminal_line", line);
+  }
+
+  async deleteTerminalLine(id: string): Promise<void> {
+    await this.mutate("delete_terminal_line", { id });
   }
 
   async getAnalytics(): Promise<Analytics> {

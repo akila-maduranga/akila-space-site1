@@ -9,20 +9,43 @@ import { PlatformIcon } from "@/lib/icons";
 import Typewriter from "./Typewriter";
 import { useSite } from "@/lib/site-context";
 
-function TerminalCard({ username, frames }: { username: string; frames: number }) {
-  const lines: { text: string; color: string; delay: number }[] = [
-    { text: "$ whoami", color: "text-mint", delay: 0.5 },
-    { text: "enthusiast · tinkerer · guy with a camera", color: "text-starlight/90", delay: 0.9 },
-    { text: "", color: "", delay: 1.2 },
-    { text: "$ cat about.txt", color: "text-mint", delay: 1.5 },
-    { text: '"not a pro — just really into this stuff"', color: "text-indigo-soft", delay: 1.9 },
-    { text: "", color: "", delay: 2.2 },
-    { text: "$ ls ./current_obsessions", color: "text-mint", delay: 2.5 },
-    { text: "nextjs/  cameras/  selfhosting/  tea/", color: "text-starlight/90", delay: 2.9 },
-    { text: "", color: "", delay: 3.6 },
-    { text: "$ ls ./gallery | wc -l", color: "text-mint", delay: 3.9 },
-    { text: `✦ ${frames} photos and counting ✦`, color: "text-mint", delay: 4.3 },
-  ];
+const OUTPUT_COLORS: Record<string, string> = {
+  mint: "text-mint",
+  starlight: "text-starlight/90",
+  indigo: "text-indigo-soft",
+};
+
+function TerminalCard({
+  title,
+  lines,
+  stats,
+  name,
+}: {
+  title: string;
+  lines: { command: string; output: string; color: string }[];
+  stats: { photos: number; projects: number; posts: number; years: number };
+  name: string;
+}) {
+  // fill {{placeholder}} tokens with live numbers so lines like
+  // "✦ {{photos}} photos and counting ✦" stay honest automatically
+  const fill = (text: string) =>
+    text.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
+      switch (key) {
+        case "photos":
+          return String(stats.photos);
+        case "projects":
+          return String(stats.projects);
+        case "posts":
+          return String(stats.posts);
+        case "years":
+          return String(stats.years);
+        case "name":
+          return name;
+        default:
+          return `{{${key}}}`;
+      }
+    });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40, rotate: 2 }}
@@ -34,20 +57,34 @@ function TerminalCard({ username, frames }: { username: string; frames: number }
         <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
         <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
         <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-        <span className="ml-3 font-mono text-xs text-muted-foreground">{username}@cosmos: ~/portfolio</span>
+        <span className="ml-3 truncate font-mono text-xs text-muted-foreground">{title}</span>
       </div>
       <div className="relative p-5 font-mono text-[13px] leading-6">
-        {lines.map((line, i) => (
-          <motion.p
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: line.delay, duration: 0.25 }}
-            className={line.color || ""}
-          >
-            {line.text || "\u00A0"}
-          </motion.p>
-        ))}
+        {lines.map((line, i) => {
+          const baseDelay = 0.5 + i * 0.9;
+          return (
+            <div key={i} className="mb-2 last:mb-0">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: baseDelay, duration: 0.25 }}
+                className="text-mint"
+              >
+                $ {line.command}
+              </motion.p>
+              {line.output ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: baseDelay + 0.4, duration: 0.25 }}
+                  className={OUTPUT_COLORS[line.color] || OUTPUT_COLORS.starlight}
+                >
+                  {fill(line.output)}
+                </motion.p>
+              ) : null}
+            </div>
+          );
+        })}
         <p className="text-mint">
           ${" "}
           <span className="inline-block h-4 w-2 translate-y-[3px] animate-blink bg-mint shadow-[0_0_10px_rgba(136,249,192,0.8)]" />
@@ -105,7 +142,11 @@ export default function Hero({
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   const rise = useTransform(scrollYProgress, [0, 0.7], [0, -90]);
-  const { stats } = useSite();
+  const { stats, terminalLines } = useSite();
+
+  const terminalTitle =
+    profile.terminal_title?.trim() ||
+    `${(profile.name.split(" ")[0] || "dev").toLowerCase().replace(/\s+/g, "")}@cosmos: ~/portfolio`;
 
   return (
     <section
@@ -248,8 +289,17 @@ export default function Hero({
         <div className="relative flex justify-center lg:justify-end">
           <Planet />
           <TerminalCard
-            username={profile.name.split(" ")[0].toLowerCase().replace(/\s+/g, "") || "dev"}
-            frames={stats.photoCount}
+            title={terminalTitle}
+            lines={terminalLines
+              .filter((l) => l.visible !== false)
+              .map((l) => ({ command: l.command, output: l.output, color: l.color }))}
+            stats={{
+              photos: stats.photoCount,
+              projects: stats.projectCount,
+              posts: stats.postCount,
+              years: stats.yearsExperience,
+            }}
+            name={profile.name}
           />
         </div>
       </div>

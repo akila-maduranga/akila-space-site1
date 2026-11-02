@@ -15,6 +15,9 @@ export interface Profile {
   /** Public base URL of your Cloudflare R2 bucket (e.g. https://pub-xxx.r2.dev
    *  or https://cdn.yourdomain.com) — lets you add photos by filename only. */
   r2_base_url: string;
+  /** Title bar of the hero terminal window ("akila@cosmos: ~/portfolio").
+   *  Empty = derived from your first name automatically. */
+  terminal_title: string;
 }
 
 export interface Project {
@@ -110,6 +113,23 @@ export interface Fact {
   visible: boolean;
 }
 
+/** One command block in the hero terminal window
+ *  ("$ whoami" → output). Edited from the admin dashboard's
+ *  Terminal tab. `output` supports {{photos}} / {{projects}} /
+ *  {{posts}} / {{years}} / {{name}} placeholders that are filled
+ *  with live numbers when the site renders. */
+export interface TerminalLine {
+  id: string;
+  /** command without the "$ " prompt — e.g. "whoami" */
+  command: string;
+  /** the response text; "" renders as a blank line */
+  output: string;
+  /** output colour: "mint" | "starlight" | "indigo" */
+  color: string;
+  sort_order: number;
+  visible: boolean;
+}
+
 export interface VisitorRecord {
   id: string;
   visitor_id: string;
@@ -188,6 +208,7 @@ export interface DataStore {
   getPosts(): Promise<BlogPost[]>;
   getPages(): Promise<PageSection[]>;
   getFacts(): Promise<Fact[]>;
+  getTerminalLines(): Promise<TerminalLine[]>;
   trackVisit(): Promise<void>;
   trackLinkClick(link: SocialLink): Promise<void>;
   saveProfile(profile: Profile): Promise<void>;
@@ -206,6 +227,8 @@ export interface DataStore {
   savePage(page: PageSection): Promise<void>;
   saveFact(fact: Fact): Promise<void>;
   deleteFact(id: string): Promise<void>;
+  saveTerminalLine(line: TerminalLine): Promise<void>;
+  deleteTerminalLine(id: string): Promise<void>;
   getAnalytics(): Promise<Analytics>;
   resetData(): Promise<void>;
 }

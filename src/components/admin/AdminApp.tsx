@@ -14,6 +14,7 @@ import {
   Orbit,
   PenLine,
   ShieldCheck,
+  SquareTerminal,
   UserRound,
   Wrench,
   Briefcase,
@@ -36,12 +37,14 @@ import ExperienceTab from "./tabs/ExperienceTab";
 import BlogTab from "./tabs/BlogTab";
 import PagesTab from "./tabs/PagesTab";
 import BadgesTab from "./tabs/BadgesTab";
+import TerminalTab from "./tabs/TerminalTab";
 
 const TABS = [
   { id: "overview", label: "Mission Control", icon: Gauge },
   { id: "pages", label: "Pages", icon: LayoutList },
   { id: "profile", label: "Profile", icon: UserRound },
   { id: "badges", label: "Badges", icon: BadgeCheck },
+  { id: "terminal", label: "Terminal", icon: SquareTerminal },
   { id: "blog", label: "Blog", icon: PenLine },
   { id: "projects", label: "Projects", icon: FolderGit2 },
   { id: "photos", label: "Gallery", icon: Camera },
@@ -270,6 +273,7 @@ export default function AdminApp() {
               {tab === "pages" ? <PagesTab /> : null}
               {tab === "profile" ? <ProfileTab /> : null}
               {tab === "badges" ? <BadgesTab /> : null}
+              {tab === "terminal" ? <TerminalTab /> : null}
               {tab === "blog" ? <BlogTab /> : null}
               {tab === "projects" ? <ProjectsTab /> : null}
               {tab === "photos" ? <PhotosTab /> : null}

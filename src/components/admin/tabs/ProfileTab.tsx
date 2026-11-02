@@ -222,6 +222,22 @@ export default function ProfileTab() {
           </p>
         </div>
 
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="p-terminal-title" className="font-mono text-xs text-mint">
+            TERMINAL WINDOW TITLE <span className="text-muted-foreground">(the hero window)</span>
+          </Label>
+          <Input
+            id="p-terminal-title"
+            value={form.terminal_title ?? ""}
+            onChange={(e) => set("terminal_title", e.target.value)}
+            className="border-indigo/25 bg-onyx/50 font-mono text-sm"
+            placeholder="akila@cosmos: ~/portfolio"
+          />
+          <p className="font-mono text-[10px] text-muted-foreground">
+            title bar of the animated terminal card on the home page — leave empty to derive it from your first name
+          </p>
+        </div>
+
         <div className="flex items-center justify-between rounded-xl border border-indigo/20 bg-white/[0.02] px-4 py-3">
           <div>
             <Label htmlFor="p-available" className="font-mono text-xs text-mint">

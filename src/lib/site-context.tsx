@@ -22,6 +22,7 @@ import {
   SEED_PROJECTS,
   SEED_SKILLS,
   SEED_SOCIAL_LINKS,
+  SEED_TERMINAL_LINES,
 } from "./seed";
 import type {
   BlogPost,
@@ -33,6 +34,7 @@ import type {
   Project,
   Skill,
   SocialLink,
+  TerminalLine,
 } from "./types";
 
 interface SiteStats {
@@ -63,6 +65,8 @@ interface SiteContextValue {
   pages: PageSection[];
   /** About-page badges ("currently into", "cameras owned", ...) */
   facts: Fact[];
+  /** Hero terminal window lines ("$ whoami" → output) */
+  terminalLines: TerminalLine[];
   stats: SiteStats;
   refresh: () => Promise<void>;
 }
@@ -81,13 +85,14 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<BlogPost[]>(SEED_POSTS);
   const [pages, setPages] = useState<PageSection[]>(SEED_PAGES);
   const [facts, setFacts] = useState<Fact[]>(SEED_FACTS);
+  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>(SEED_TERMINAL_LINES);
   const visitDone = useRef(false);
 
   const store = useMemo(() => getStore(), []);
 
   const refresh = useCallback(async () => {
     try {
-      const [p, proj, links, sk, exp, ph, po, pg, fa] = await Promise.all([
+      const [p, proj, links, sk, exp, ph, po, pg, fa, tl] = await Promise.all([
         store.getProfile(),
         store.getProjects(),
         store.getSocialLinks(),
@@ -97,6 +102,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         store.getPosts(),
         store.getPages(),
         store.getFacts(),
+        store.getTerminalLines(),
       ]);
       setProfile(p);
       setProjects(proj);
@@ -107,6 +113,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       setPosts(po);
       setPages(pg);
       setFacts(fa);
+      setTerminalLines(tl);
       setReadError(null);
     } catch (err) {
       console.error("Failed to load site data:", err);
@@ -173,6 +180,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     posts,
     pages,
     facts,
+    terminalLines,
     stats: {
       yearsExperience: profile.years_experience,
       projectCount: projects.filter((p) => p.visible !== false).length,

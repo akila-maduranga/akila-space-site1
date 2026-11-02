@@ -8,6 +8,7 @@ import type {
   Project,
   Skill,
   SocialLink,
+  TerminalLine,
 } from "./types";
 
 /**
@@ -44,6 +45,7 @@ export const SEED_PROFILE: Profile = {
   available: true,
   years_experience: 5,
   r2_base_url: "",
+  terminal_title: "",
 };
 
 export const SEED_PROJECTS: Project[] = [
@@ -441,7 +443,6 @@ Anyway — poke around, click things, and if something looks broken, it probably
   },
 ];
 
-/** Each section of the home page can be shown or hidden from the admin dashboard. */
 export const SEED_FACTS: Fact[] = [
   {
     id: "fact-1",
@@ -472,6 +473,44 @@ export const SEED_FACTS: Fact[] = [
     icon: "coffee",
     label: "fuel of choice",
     value: "plain tea, three sugars",
+    sort_order: 3,
+    visible: true,
+  },
+];
+
+/** The hero terminal window ("akila@cosmos: ~/portfolio") — every command
+ *  and its output is editable from the admin dashboard's Terminal tab.
+ *  Placeholders like {{photos}} are replaced with live numbers on the site. */
+export const SEED_TERMINAL_LINES: TerminalLine[] = [
+  {
+    id: "term-1",
+    command: "whoami",
+    output: "enthusiast · tinkerer · guy with a camera",
+    color: "starlight",
+    sort_order: 0,
+    visible: true,
+  },
+  {
+    id: "term-2",
+    command: "cat about.txt",
+    output: '"not a pro — just really into this stuff"',
+    color: "indigo",
+    sort_order: 1,
+    visible: true,
+  },
+  {
+    id: "term-3",
+    command: "ls ./current_obsessions",
+    output: "nextjs/  cameras/  selfhosting/  tea/",
+    color: "starlight",
+    sort_order: 2,
+    visible: true,
+  },
+  {
+    id: "term-4",
+    command: "ls ./gallery | wc -l",
+    output: "✦ {{photos}} photos and counting ✦",
+    color: "mint",
     sort_order: 3,
     visible: true,
   },

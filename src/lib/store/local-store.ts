@@ -13,6 +13,7 @@ import type {
   Project,
   Skill,
   SocialLink,
+  TerminalLine,
 } from "../types";
 import {
   SEED_EXPERIENCES,
@@ -24,6 +25,7 @@ import {
   SEED_PROJECTS,
   SEED_SKILLS,
   SEED_SOCIAL_LINKS,
+  SEED_TERMINAL_LINES,
 } from "../seed";
 
 /**
@@ -46,6 +48,7 @@ interface Content {
   posts: BlogPost[];
   pages: PageSection[];
   facts: Fact[];
+  terminalLines: TerminalLine[];
 }
 
 interface PageviewRow {
@@ -200,6 +203,7 @@ export class LocalStore implements DataStore {
       posts: SEED_POSTS,
       pages: SEED_PAGES,
       facts: SEED_FACTS,
+      terminalLines: SEED_TERMINAL_LINES,
     });
 
     // one-time rename: browsers that saved an older seed call the photo
@@ -260,6 +264,10 @@ export class LocalStore implements DataStore {
 
   async getFacts(): Promise<Fact[]> {
     return [...this.getContent().facts].sort((a, b) => a.sort_order - b.sort_order);
+  }
+
+  async getTerminalLines(): Promise<TerminalLine[]> {
+    return [...this.getContent().terminalLines].sort((a, b) => a.sort_order - b.sort_order);
   }
 
   async trackVisit(): Promise<void> {
@@ -420,6 +428,20 @@ export class LocalStore implements DataStore {
   async deleteFact(id: string): Promise<void> {
     const content = this.getContent();
     content.facts = content.facts.filter((f) => f.id !== id);
+    this.setContent(content);
+  }
+
+  async saveTerminalLine(line: TerminalLine): Promise<void> {
+    const content = this.getContent();
+    const idx = content.terminalLines.findIndex((l) => l.id === line.id);
+    if (idx >= 0) content.terminalLines[idx] = line;
+    else content.terminalLines.push(line);
+    this.setContent(content);
+  }
+
+  async deleteTerminalLine(id: string): Promise<void> {
+    const content = this.getContent();
+    content.terminalLines = content.terminalLines.filter((l) => l.id !== id);
     this.setContent(content);
   }
 
