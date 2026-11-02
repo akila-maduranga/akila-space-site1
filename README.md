@@ -2,7 +2,7 @@
 
 A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photo gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
 
-> **You are on v2.0** — quick check: `src/components/site/Gallery.tsx` exists (not `Photography.tsx`) and `src/lib/store/local-store.ts` exists. v2.0 fixes a `.gitignore` bug that silently kept `local-store.ts` out of Git pushes (the Vercel "Can't resolve './local-store'" error) and a Supabase `42P17` error in `schema.sql`.
+> **You are on v2.1** — quick check: `package.json` says `"version": "2.1.0"` and its `devDependencies` include `@types/node`. v2.1 fixes the Vercel build error "Please install @types/node"; v2.0 fixed a `.gitignore` bug that silently kept `local-store.ts` out of Git pushes and a Supabase `42P17` error in `schema.sql`.
 
 ![theme](https://img.shields.io/badge/theme-deep%20space-6331FB) ![stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20Supabase%20%C2%B7%20Tailwind%204-88F9C0)
 
@@ -73,7 +73,7 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 
 ## ▲ Deploy to Vercel
 
-**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: the folder contains `src/components/site/Gallery.tsx` and `src/lib/store/local-store.ts`.
+**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: `package.json` says `"version": "2.1.0"`.
 
 **Option A — CLI**
 

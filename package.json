@@ -1,6 +1,6 @@
 {
   "name": "cosmosfolio",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -56,15 +56,16 @@
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^1.1.2",
-    "vanta": "^0.5.24",
-    "three": "0.134.0"
+    "three": "0.134.0",
+    "vanta": "0.5.24",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "0.134.0",
+    "@types/three": "0.134",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",
