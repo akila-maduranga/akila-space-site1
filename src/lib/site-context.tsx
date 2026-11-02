@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { getStore } from "./store";
 import {
   SEED_EXPERIENCES,
+  SEED_FACTS,
   SEED_PAGES,
   SEED_PHOTOS,
   SEED_POSTS,
@@ -25,6 +26,7 @@ import {
 import type {
   BlogPost,
   Experience,
+  Fact,
   PageSection,
   Photo,
   Profile,
@@ -59,6 +61,8 @@ interface SiteContextValue {
   photos: Photo[];
   posts: BlogPost[];
   pages: PageSection[];
+  /** About-page badges ("currently into", "cameras owned", ...) */
+  facts: Fact[];
   stats: SiteStats;
   refresh: () => Promise<void>;
 }
@@ -76,13 +80,14 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const [photos, setPhotos] = useState<Photo[]>(SEED_PHOTOS);
   const [posts, setPosts] = useState<BlogPost[]>(SEED_POSTS);
   const [pages, setPages] = useState<PageSection[]>(SEED_PAGES);
+  const [facts, setFacts] = useState<Fact[]>(SEED_FACTS);
   const visitDone = useRef(false);
 
   const store = useMemo(() => getStore(), []);
 
   const refresh = useCallback(async () => {
     try {
-      const [p, proj, links, sk, exp, ph, po, pg] = await Promise.all([
+      const [p, proj, links, sk, exp, ph, po, pg, fa] = await Promise.all([
         store.getProfile(),
         store.getProjects(),
         store.getSocialLinks(),
@@ -91,6 +96,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         store.getPhotos(),
         store.getPosts(),
         store.getPages(),
+        store.getFacts(),
       ]);
       setProfile(p);
       setProjects(proj);
@@ -100,6 +106,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       setPhotos(ph);
       setPosts(po);
       setPages(pg);
+      setFacts(fa);
       setReadError(null);
     } catch (err) {
       console.error("Failed to load site data:", err);
@@ -165,6 +172,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     photos,
     posts,
     pages,
+    facts,
     stats: {
       yearsExperience: profile.years_experience,
       projectCount: projects.filter((p) => p.visible !== false).length,

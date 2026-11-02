@@ -1,6 +1,44 @@
 "use client";
 
-import { Globe, Mail, Link as LinkIcon } from "lucide-react";
+import { Globe, Mail, Link as LinkIcon, Sparkles } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BadgeCheck,
+  Bike,
+  Bird,
+  Book,
+  Briefcase,
+  Camera,
+  Car,
+  Cat,
+  Code2,
+  Coffee,
+  Cpu,
+  Dog,
+  Film,
+  Gamepad2,
+  GraduationCap,
+  Guitar,
+  Headphones,
+  Heart,
+  Laptop,
+  Leaf,
+  Map,
+  MoonStar,
+  Mountain,
+  Music,
+  Palette,
+  Plane,
+  Rocket,
+  Server,
+  Smartphone,
+  Star,
+  Sun,
+  Telescope,
+  Terminal,
+  Wrench,
+  Zap,
+} from "lucide-react";
 import type { SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -59,6 +97,63 @@ export const PLATFORM_META: Record<string, PlatformMeta> = {
 };
 
 export const PLATFORM_KEYS = Object.keys(PLATFORM_META);
+
+/**
+ * Icon picker for the About-page badges (editable from admin → Badges).
+ * Keys are stored in the `facts.icon` column, so adding more here later
+ * just works — unknown keys fall back to a sparkle.
+ */
+export const FACT_ICONS: Record<string, LucideIcon> = {
+  laptop: Laptop,
+  code: Code2,
+  terminal: Terminal,
+  server: Server,
+  cpu: Cpu,
+  smartphone: Smartphone,
+  camera: Camera,
+  film: Film,
+  telescope: Telescope,
+  rocket: Rocket,
+  coffee: Coffee,
+  zap: Zap,
+  heart: Heart,
+  star: Star,
+  sparkles: Sparkles,
+  moonstar: MoonStar,
+  sun: Sun,
+  map: Map,
+  mountain: Mountain,
+  plane: Plane,
+  bicycle: Bike,
+  car: Car,
+  gamepad: Gamepad2,
+  music: Music,
+  headphones: Headphones,
+  guitar: Guitar,
+  book: Book,
+  palette: Palette,
+  wrench: Wrench,
+  briefcase: Briefcase,
+  gradcap: GraduationCap,
+  bird: Bird,
+  cat: Cat,
+  dog: Dog,
+  leaf: Leaf,
+  badgecheck: BadgeCheck,
+};
+
+export const FACT_ICON_KEYS = Object.keys(FACT_ICONS);
+
+export function FactIcon({
+  icon,
+  className,
+}: {
+  icon: string;
+  className?: string;
+}) {
+  const Cmp = FACT_ICONS[icon] || Sparkles;
+  return <Cmp className={className} aria-hidden />;
+}
 
 export function isColouredPlatform(platform: string): boolean {
   return Boolean(PLATFORM_META[platform]?.coloured);

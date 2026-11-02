@@ -119,6 +119,17 @@ create table if not exists public.page_sections (
   sort_order  int not null default 0
 );
 
+-- about-page badges ("currently into", "cameras owned", ...) — edited
+-- from the admin dashboard's Badges tab (v2.3)
+create table if not exists public.facts (
+  id         text primary key,
+  icon       text not null default 'sparkles',
+  label      text not null,
+  value      text not null default '',
+  sort_order int not null default 0,
+  visible    boolean not null default true
+);
+
 -- ───────────────────────────────────────────────
 --  ANALYTICS TABLES (written via RPCs only)
 -- ───────────────────────────────────────────────
@@ -213,6 +224,7 @@ drop policy if exists "public read experiences"   on public.experiences;
 drop policy if exists "public read photos"        on public.photos;
 drop policy if exists "public read posts"         on public.posts;
 drop policy if exists "public read page_sections" on public.page_sections;
+drop policy if exists "public read facts"         on public.facts;
 
 create policy "public read profile"       on public.profile       for select to anon, authenticated using (true);
 create policy "public read projects"      on public.projects      for select to anon, authenticated using (true);
@@ -222,6 +234,7 @@ create policy "public read experiences"   on public.experiences   for select to 
 create policy "public read photos"        on public.photos        for select to anon, authenticated using (true);
 create policy "public read posts"         on public.posts         for select to anon, authenticated using (true);
 create policy "public read page_sections" on public.page_sections for select to anon, authenticated using (true);
+create policy "public read facts"         on public.facts         for select to anon, authenticated using (true);
 
 -- ───────────────────────────────────────────────
 --  TRACKING RPCs (callable with the anon key)
@@ -486,6 +499,15 @@ values
   ('experience', 'Journey',    'How I ended up here — a short timeline',           true, 5),
   ('connect',    'Connect',    'Where to find me online',                         true, 6)
 on conflict (key) do nothing;
+
+-- starter about-page badges (edit them from the admin dashboard → Badges)
+insert into public.facts (id, icon, label, value, sort_order, visible)
+values
+  ('fact-1', 'laptop',   'currently into', 'next.js, self-hosting & old lenses',    0, true),
+  ('fact-2', 'camera',   'cameras owned',  'more than I need, fewer than I want',   1, true),
+  ('fact-3', 'moonstar', 'weekend status', 'out shooting somewhere in the hills',  2, true),
+  ('fact-4', 'coffee',   'fuel of choice', 'plain tea, three sugars',               3, true)
+on conflict (id) do nothing;
 
 -- ═════════════════════════════════════════════════════════════
 --  one-time migration (only for databases set up before the

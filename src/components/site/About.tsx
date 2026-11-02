@@ -1,15 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Camera, Coffee, Laptop, MoonStar } from "lucide-react";
 import type { Profile } from "@/lib/types";
-
-const FACTS = [
-  { icon: Laptop, label: "currently into", value: "next.js, self-hosting & old lenses" },
-  { icon: Camera, label: "cameras owned", value: "more than I need, fewer than I want" },
-  { icon: MoonStar, label: "weekend status", value: "out shooting somewhere in the hills" },
-  { icon: Coffee, label: "fuel of choice", value: "plain tea, three sugars" },
-];
+import { useSite } from "@/lib/site-context";
+import { FactIcon } from "@/lib/icons";
 
 export default function About({ profile }: { profile: Profile }) {
   const initials = profile.name
@@ -20,6 +14,8 @@ export default function About({ profile }: { profile: Profile }) {
     .toUpperCase();
 
   const paragraphs = profile.bio.split("\n").filter(Boolean);
+  const { facts } = useSite();
+  const visibleFacts = facts.filter((f) => f.visible !== false);
 
   return (
     <div className="relative">
@@ -95,28 +91,30 @@ export default function About({ profile }: { profile: Profile }) {
               </motion.p>
             ))}
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {FACTS.map((fact, i) => (
-                <motion.div
-                  key={fact.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.5, delay: 0.15 + i * 0.08 }}
-                  className="glass card-hover flex items-center gap-3 rounded-xl px-4 py-3"
-                >
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo/15 text-indigo-soft">
-                    <fact.icon className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {fact.label}
-                    </p>
-                    <p className="truncate text-xs font-medium text-starlight sm:text-sm">{fact.value}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            {visibleFacts.length > 0 ? (
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {visibleFacts.map((fact, i) => (
+                  <motion.div
+                    key={fact.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-60px" }}
+                    transition={{ duration: 0.5, delay: 0.15 + i * 0.08 }}
+                    className="glass card-hover flex items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo/15 text-indigo-soft">
+                      <FactIcon icon={fact.icon} className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {fact.label}
+                      </p>
+                      <p className="truncate text-xs font-medium text-starlight sm:text-sm">{fact.value}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
     </div>

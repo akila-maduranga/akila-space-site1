@@ -6,6 +6,7 @@ import type {
   BlogPost,
   DataStore,
   Experience,
+  Fact,
   PageSection,
   Photo,
   Profile,
@@ -15,6 +16,7 @@ import type {
 } from "../types";
 import {
   SEED_EXPERIENCES,
+  SEED_FACTS,
   SEED_PAGES,
   SEED_PHOTOS,
   SEED_POSTS,
@@ -43,6 +45,7 @@ interface Content {
   photos: Photo[];
   posts: BlogPost[];
   pages: PageSection[];
+  facts: Fact[];
 }
 
 interface PageviewRow {
@@ -196,6 +199,7 @@ export class LocalStore implements DataStore {
       photos: SEED_PHOTOS,
       posts: SEED_POSTS,
       pages: SEED_PAGES,
+      facts: SEED_FACTS,
     });
 
     // one-time rename: browsers that saved an older seed call the photo
@@ -252,6 +256,10 @@ export class LocalStore implements DataStore {
 
   async getPages(): Promise<PageSection[]> {
     return [...this.getContent().pages].sort((a, b) => a.sort_order - b.sort_order);
+  }
+
+  async getFacts(): Promise<Fact[]> {
+    return [...this.getContent().facts].sort((a, b) => a.sort_order - b.sort_order);
   }
 
   async trackVisit(): Promise<void> {
@@ -398,6 +406,20 @@ export class LocalStore implements DataStore {
     const idx = content.pages.findIndex((p) => p.key === page.key);
     if (idx >= 0) content.pages[idx] = page;
     else content.pages.push(page);
+    this.setContent(content);
+  }
+
+  async saveFact(fact: Fact): Promise<void> {
+    const content = this.getContent();
+    const idx = content.facts.findIndex((f) => f.id === fact.id);
+    if (idx >= 0) content.facts[idx] = fact;
+    else content.facts.push(fact);
+    this.setContent(content);
+  }
+
+  async deleteFact(id: string): Promise<void> {
+    const content = this.getContent();
+    content.facts = content.facts.filter((f) => f.id !== id);
     this.setContent(content);
   }
 

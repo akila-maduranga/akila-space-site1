@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { SEED_EXPERIENCES, SEED_PAGES, SEED_PHOTOS, SEED_POSTS, SEED_PROFILE, SEED_PROJECTS, SEED_SKILLS, SEED_SOCIAL_LINKS } from "@/lib/seed";
+import { SEED_EXPERIENCES, SEED_FACTS, SEED_PAGES, SEED_PHOTOS, SEED_POSTS, SEED_PROFILE, SEED_PROJECTS, SEED_SKILLS, SEED_SOCIAL_LINKS } from "@/lib/seed";
 
 const DEFAULT_PASSWORD = "admin123";
 
@@ -188,6 +188,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true });
       }
 
+      case "save_fact": {
+        const f = payload as unknown as (typeof SEED_FACTS)[number];
+        const { error } = await sb.from("facts").upsert({
+          ...f,
+          id: f.id || slugId("fact"),
+        });
+        if (error) throw error;
+        return NextResponse.json({ ok: true, id: f.id || slugId("fact") });
+      }
+
+      case "delete_fact": {
+        const { error } = await sb.from("facts").delete().eq("id", String(payload.id));
+        if (error) throw error;
+        return NextResponse.json({ ok: true });
+      }
+
       case "seed_content": {
         // Insert seed rows only if the tables are empty
         const { count } = await sb.from("profile").select("id", { count: "exact", head: true });
@@ -235,6 +251,12 @@ export async function POST(req: Request) {
           .select("key", { count: "exact", head: true });
         if ((pageCount ?? 0) === 0) {
           await sb.from("page_sections").insert(SEED_PAGES);
+        }
+        const { count: factCount } = await sb
+          .from("facts")
+          .select("id", { count: "exact", head: true });
+        if ((factCount ?? 0) === 0) {
+          await sb.from("facts").insert(SEED_FACTS);
         }
         return NextResponse.json({ ok: true });
       }

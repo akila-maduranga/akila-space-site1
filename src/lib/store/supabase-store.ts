@@ -2,11 +2,13 @@
 
 import { getSupabaseClient } from "../supabase";
 import { getCountry } from "../geo";
+import { SEED_FACTS } from "../seed";
 import type {
   Analytics,
   BlogPost,
   DataStore,
   Experience,
+  Fact,
   PageSection,
   Photo,
   Profile,
@@ -169,6 +171,25 @@ export class SupabaseStore implements DataStore {
     return (data || []) as PageSection[];
   }
 
+  async getFacts(): Promise<Fact[]> {
+    const sb = getSupabaseClient();
+    if (!sb) throw new Error("Supabase not configured");
+    const { data, error } = await sb
+      .from("facts")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) {
+      // Pre-v2.3 database: the facts table hasn't been created yet.
+      // Fall back to the built-in badges instead of failing the whole
+      // read (which would knock the site back to demo content).
+      if (/PGRST205|does not exist|Could not find the table/i.test(error.message)) {
+        return SEED_FACTS;
+      }
+      throw error;
+    }
+    return (data || []) as Fact[];
+  }
+
   async trackVisit(): Promise<void> {
     const sb = getSupabaseClient();
     if (!sb) return;
@@ -258,6 +279,14 @@ export class SupabaseStore implements DataStore {
 
   async savePage(page: PageSection): Promise<void> {
     await this.mutate("save_page", page);
+  }
+
+  async saveFact(fact: Fact): Promise<void> {
+    await this.mutate("save_fact", fact);
+  }
+
+  async deleteFact(id: string): Promise<void> {
+    await this.mutate("delete_fact", { id });
   }
 
   async getAnalytics(): Promise<Analytics> {

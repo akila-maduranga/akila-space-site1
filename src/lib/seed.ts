@@ -1,6 +1,7 @@
 import type {
   BlogPost,
   Experience,
+  Fact,
   PageSection,
   Photo,
   Profile,
@@ -441,6 +442,41 @@ Anyway — poke around, click things, and if something looks broken, it probably
 ];
 
 /** Each section of the home page can be shown or hidden from the admin dashboard. */
+export const SEED_FACTS: Fact[] = [
+  {
+    id: "fact-1",
+    icon: "laptop",
+    label: "currently into",
+    value: "next.js, self-hosting & old lenses",
+    sort_order: 0,
+    visible: true,
+  },
+  {
+    id: "fact-2",
+    icon: "camera",
+    label: "cameras owned",
+    value: "more than I need, fewer than I want",
+    sort_order: 1,
+    visible: true,
+  },
+  {
+    id: "fact-3",
+    icon: "moonstar",
+    label: "weekend status",
+    value: "out shooting somewhere in the hills",
+    sort_order: 2,
+    visible: true,
+  },
+  {
+    id: "fact-4",
+    icon: "coffee",
+    label: "fuel of choice",
+    value: "plain tea, three sugars",
+    sort_order: 3,
+    visible: true,
+  },
+];
+
 export const SEED_PAGES: PageSection[] = [
   {
     key: "about",

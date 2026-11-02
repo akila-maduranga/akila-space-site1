@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowUp, Heart } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowUp } from "lucide-react";
 import type { Profile } from "@/lib/types";
 
 export default function Footer({ profile }: { profile: Profile }) {
@@ -14,18 +13,9 @@ export default function Footer({ profile }: { profile: Profile }) {
             <span className="text-mint">.space</span>
           </p>
           <p className="font-mono text-[11px] text-muted-foreground">
-            © {new Date().getFullYear()} · made in {profile.location || "Sri Lanka"} with patience and caffeine
+            © {new Date().getFullYear()} {profile.name}
           </p>
         </div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
-        >
-          built by hand with <Heart className="h-3 w-3 fill-[#ff5d7a] text-[#ff5d7a] animate-glow" /> and far too much tea
-        </motion.p>
 
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

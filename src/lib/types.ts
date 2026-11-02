@@ -98,6 +98,18 @@ export interface PageSection {
   sort_order: number;
 }
 
+/** About-page badge — the small icon cards under the bio
+ *  ("currently into", "cameras owned", ...). Fully editable from
+ *  the admin dashboard's Badges tab. `icon` is a key into FACT_ICONS. */
+export interface Fact {
+  id: string;
+  icon: string;
+  label: string;
+  value: string;
+  sort_order: number;
+  visible: boolean;
+}
+
 export interface VisitorRecord {
   id: string;
   visitor_id: string;
@@ -175,6 +187,7 @@ export interface DataStore {
   getPhotos(): Promise<Photo[]>;
   getPosts(): Promise<BlogPost[]>;
   getPages(): Promise<PageSection[]>;
+  getFacts(): Promise<Fact[]>;
   trackVisit(): Promise<void>;
   trackLinkClick(link: SocialLink): Promise<void>;
   saveProfile(profile: Profile): Promise<void>;
@@ -191,6 +204,8 @@ export interface DataStore {
   savePost(post: BlogPost): Promise<void>;
   deletePost(id: string): Promise<void>;
   savePage(page: PageSection): Promise<void>;
+  saveFact(fact: Fact): Promise<void>;
+  deleteFact(id: string): Promise<void>;
   getAnalytics(): Promise<Analytics>;
   resetData(): Promise<void>;
 }

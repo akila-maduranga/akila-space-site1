@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
   BarChart3,
+  BadgeCheck,
   Camera,
   FolderGit2,
   Gauge,
@@ -34,11 +35,13 @@ import SkillsTab from "./tabs/SkillsTab";
 import ExperienceTab from "./tabs/ExperienceTab";
 import BlogTab from "./tabs/BlogTab";
 import PagesTab from "./tabs/PagesTab";
+import BadgesTab from "./tabs/BadgesTab";
 
 const TABS = [
   { id: "overview", label: "Mission Control", icon: Gauge },
   { id: "pages", label: "Pages", icon: LayoutList },
   { id: "profile", label: "Profile", icon: UserRound },
+  { id: "badges", label: "Badges", icon: BadgeCheck },
   { id: "blog", label: "Blog", icon: PenLine },
   { id: "projects", label: "Projects", icon: FolderGit2 },
   { id: "photos", label: "Gallery", icon: Camera },
@@ -121,11 +124,7 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
               <p className="font-mono text-xs text-[#ff5d7a]" role="alert">
                 ✗ {error}
               </p>
-            ) : (
-              <p className="font-mono text-[11px] text-muted-foreground/70">
-                default code: admin123 — change ADMIN_PASSWORD in your env
-              </p>
-            )}
+            ) : null}
           </div>
           <Button
             type="submit"
@@ -270,6 +269,7 @@ export default function AdminApp() {
               {tab === "overview" ? <OverviewTab /> : null}
               {tab === "pages" ? <PagesTab /> : null}
               {tab === "profile" ? <ProfileTab /> : null}
+              {tab === "badges" ? <BadgesTab /> : null}
               {tab === "blog" ? <BlogTab /> : null}
               {tab === "projects" ? <ProjectsTab /> : null}
               {tab === "photos" ? <PhotosTab /> : null}
