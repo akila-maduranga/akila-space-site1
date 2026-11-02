@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, Send } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { Profile, SocialLink } from "@/lib/types";
 import { PLATFORM_META, PlatformIcon } from "@/lib/icons";
+import ContactForm from "./ContactForm";
 
 export default function SocialLinks({
   profile,
@@ -35,13 +36,7 @@ export default function SocialLinks({
               spot on the island? My inbox is open. No pitch required — nice
               strangers are welcome too.
             </p>
-            <a
-              href={`mailto:${profile.email}`}
-              className="mint-glow-btn group mt-8 inline-flex w-fit items-center gap-3 rounded-full bg-gradient-to-r from-indigo to-indigo/70 px-6 py-3.5 font-display text-sm font-semibold text-white shadow-[0_12px_44px_-10px_rgba(99,49,251,0.85)]"
-            >
-              <Send className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-0.5" />
-              Send an email
-            </a>
+            <ContactForm profile={profile} />
             <p className="mt-4 font-mono text-xs text-muted-foreground">
               <span className="text-mint">▸</span> usually replies within a day or two — no promises
             </p>

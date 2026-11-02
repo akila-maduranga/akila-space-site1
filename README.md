@@ -2,24 +2,25 @@
 
 A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **admin dashboard**, a **blog**, a **photo gallery served from Cloudflare R2**, and **Supabase-powered analytics** that track visitors and every social link click.
 
-> **You are on v2.3.0** — quick check: `package.json` says `"version": "2.3.0"`. v2.3.0 fixes the "admin edits don't update anything" class of bug: when the database can't be read, the site **silently fell back to built-in demo content** (which looks identical to the real thing) — now the admin dashboard shows exactly what broke and why (status panel + red banner on every tab), API errors return real messages instead of `[object Object]`, the status check verifies the actual write path (service key role, tables, permissions, public reads), and the Content-Security-Policy allows your real Supabase origin instead of hard-coded `*.supabase.co`. v2.2.1 fixed the `42703: column "country" does not exist` schema upgrade error. v2.2 fixed the invisible animated background, added the admin status panel, country tracking, the 3-strikes 24-hour login lockout, and security headers. v2.1 fixed the missing `@types/node` build error; v2.0 fixed the `.gitignore`/`local-store.ts` deploy bug and the Supabase `42P17` schema error.
+> **You are on v2.6.0** — quick check: `package.json` says `"version": "2.6.0"`. v2.6 adds **real email**: a contact form on `/connect` (`/api/contact` → Resend) plus automatic **inbound forwarding** — mail sent to `anything@akila.space` is received by Resend and forwarded straight to your private Gmail (`/api/email-forward` webhook). It also makes the **hero terminal window fully editable** (admin → Terminal tab: commands, outputs, colours, order, visibility, `{{photos}}`-style live placeholders) and expands the social-link platform picker to **34 platforms** (Spotify, Last.fm, SoundCloud, Steam, Threads, dev.to, …). v2.5 added the editable About-page **Badges** tab and simplified the footer. v2.4 split the site into proper per-section routes (`/about`, `/projects`, `/gallery`, `/blog`, `/skills`, `/experience`, `/connect`). v2.3 fixed the "admin edits don't update anything" class of bug with the admin status panel; v2.2.1 fixed the `42703` schema upgrade error; v2.2 fixed the invisible animated background, login lockout and country tracking; v2.1 fixed the missing `@types/node` build error; v2.0 fixed the `.gitignore`/`local-store.ts` deploy bug and the Supabase `42P17` schema error.
 
 ![theme](https://img.shields.io/badge/theme-deep%20space-6331FB) ![stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20Supabase%20%C2%B7%20Tailwind%204-88F9C0)
 
 ## ✨ What's inside
 
-**Public site** (single page, fully animated):
+**Public site** (multi-page, fully animated — each section also has its own route: `/about`, `/projects`, `/gallery`, `/blog`, `/skills`, `/experience`, `/connect`):
 - 🕸️ **Vanta.js animated network** ([vantajs.com](https://www.vantajs.com/)) — a living constellation of indigo points and lines drifting behind everything, reacting to your mouse
 - 🌠 Parallax **starfield canvas** with twinkling stars & shooting stars layered on top
 - 🪐 Floating planet with orbiting satellite + animated nebula glows
-- 🖥️ Self-typing **terminal card** in the hero
+- 🖥️ Self-typing **terminal card** in the hero — every command, output, colour and order is editable from the dashboard's **Terminal** tab, with live placeholders like `{{photos}}` and `{{years}}` that stay honest automatically
 - ⌨️ Typewriter headline that cycles through your roles
 - 🎨 Your exact palette: Onyx Black `#01010D` · Electric Indigo `#6331FB` · Tropical Mint `#88F9C0`
 - 💫 Custom glowing cursor, scroll-reveal animations, tech-grid overlay, glassmorphism cards
 - 📸 **Gallery section** — masonry photo gallery with category filters, hover reveals and a keyboard-navigable lightbox (`←` `→` `Esc`)
 - 📝 **Blog** — write posts in markdown from the dashboard (headings, code blocks, quotes, images); every post gets a shareable `#/blog/<slug>` link
 - 🧭 **Per-page visibility** — flip any section on or off and reorder it right from the dashboard; the public site (and its navbar) update instantly
-- 🎨 **Full-colour brand icons** for social links, bundled from [dheereshag/coloured-icons](https://github.com/dheereshag/coloured-icons) into `public/icons/` (22 platforms: GitHub, LinkedIn, Instagram, X, YouTube, WhatsApp, Telegram, Discord, TikTok, Reddit, Bluesky, Twitch, Behance, Dribbble, Pinterest, ArtStation, Figma and more)
+- 🎨 **Full-colour brand icons** for social links, bundled from [dheereshag/coloured-icons](https://github.com/dheereshag/coloured-icons) into `public/icons/` (**34 platforms**: GitHub, LinkedIn, Instagram, X, YouTube, WhatsApp, Telegram, Discord, TikTok, Reddit, Bluesky, Twitch, Behance, Dribbble, Pinterest, ArtStation, Figma, **Spotify, Last.fm, SoundCloud, Steam, Threads, dev.to, Medium, Mastodon, Snapchat, Letterboxd** and more)
+- 📬 **Working contact form** on `/connect` — posts to `/api/contact` and lands in your private inbox via [Resend](https://resend.com), with spam protection (honeypot + rate limit) and a graceful `mailto:` fallback when email isn't configured. See **Email setup** below for the full picture, including receiving mail at `contact@akila.space`
 - Sections: Hero · About · Featured + grid Projects · Gallery · Blog · Skills (animated bars + marquee) · Experience timeline · Social links · Footer — **each one can be hidden or reordered from the admin**
 
 **Mission Control** (admin dashboard — visit **`/admin`** directly; there is deliberately **no button or link to it anywhere** on the site, and search engines are told to stay away):
@@ -28,7 +29,7 @@ A stunning, animated personal portfolio for **Akila Maduranga** with a hidden **
 - 🧭 **Pages** — toggle each section visible/hidden and drag-order them; the public site updates instantly
 - 📝 **Blog** — write, edit, hide or delete posts (markdown editor with live preview)
 - 📊 **Telemetry**: unique visitors, page views, clicks, 30-day visitor chart, clicks per channel, **clicks per country (Signal Origins)**, top referrers, device breakdown, recent activity
-- ✏️ Full CRUD for **everything**: profile & hero, projects, **gallery**, social links, skills, experience
+- ✏️ Full CRUD for **everything**: profile & hero, **terminal window**, projects, **gallery**, social links, skills, experience, **About badges**
 
 **Tracking (Supabase)**:
 - Every visit is recorded (unique visitor + page views + referrer + device + country)
@@ -58,6 +59,24 @@ The gallery ships with 12 starter photos in `public/samples/`. To serve your own
 
 Full URLs always work as well, so you can mix R2, local `/samples/…` files and any other public host.
 
+## 📬 Email — contact form + receiving at `contact@akila.space` (Resend, free)
+
+The site ships with two email endpoints (both disabled harmlessly until you add `RESEND_API_KEY`):
+
+- **`/api/contact`** — the form on `/connect` sends visitor messages from `contact@akila.space` straight to your private inbox, with `Reply-To` set to the visitor so one click in Gmail answers them.
+- **`/api/email-forward`** — a Resend webhook that receives mail sent to **any address `@akila.space`** (Resend holds the MX record) and forwards it to your private Gmail automatically.
+
+### Setup in 4 steps
+
+1. **Resend** — create a free account at [resend.com](https://resend.com) → **Domains → Add domain** → `akila.space` → add the shown SPF/DKIM/TXT records at your DNS host → wait for *Verified*. On the domain page, also toggle **Enable Receiving** and add the shown **MX record**.
+2. **API key** — Resend → **API Keys → Create API key** (full access).
+3. **Vercel** — Project → Settings → Environment Variables → add `RESEND_API_KEY` (the optional `CONTACT_TO_EMAIL` / `CONTACT_FROM_EMAIL` / `CONTACT_FORWARD_TO` / `CONTACT_DOMAIN` vars are documented in `.env.example`; the defaults already point at `contact@akila.space` → your Gmail). **Redeploy**.
+4. **Webhook** — Resend → **Webhooks → Create Webhook** → endpoint `https://akila.space/api/email-forward` → select the **`email.received`** event → save.
+
+**Test**: send yourself a mail at `contact@akila.space` from Gmail — it should arrive in your private inbox ~10s later (mark it *Not spam* once). Fill in the `/connect` form — the message lands in the same inbox with the visitor's address in `Reply-To`.
+
+Free plan limits: 100 mails/day, 3,000/month, 3 custom domains, 3 inboxes — inbound mail counts toward the monthly quota. The dashboard's *Receiving* tab keeps 30 days of history; your Gmail is the real archive. Want to **reply as `contact@akila.space` from inside Gmail**? Add it under Gmail → Settings → Accounts → *Send mail as* using Resend's SMTP (`smtp.resend.com`, port 587, user `resend`, password = your API key).
+
 ## 🛠 Connect Supabase (production mode)
 
 1. Create a free project at [supabase.com](https://supabase.com)
@@ -74,7 +93,7 @@ Full URLs always work as well, so you can mix R2, local `/samples/…` files and
 
 ## ▲ Deploy to Vercel
 
-**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: `package.json` says `"version": "2.3.0"`.
+**Before you start — make sure you are deploying THIS version.** Unzip this archive into a **fresh folder** (don't reuse the folder from an older download; both have the same file names and mixing them brings back old bugs). Two-second sanity check: `package.json` says `"version": "2.6.0"`.
 
 **Option A — CLI**
 
@@ -89,7 +108,7 @@ vercel --prod   # production deploy
 1. Push this folder to a GitHub repo
 2. [vercel.com/new](https://vercel.com/new) → import the repo
 3. Framework preset: **Next.js** (auto-detected, zero config needed)
-4. Add the 4 environment variables from `.env.example`
+4. Add the environment variables from `.env.example` (Supabase ×3, `ADMIN_PASSWORD`, and `RESEND_API_KEY` if you want email)
 5. Deploy 🚀
 
 **If you already pushed an older copy of this project to GitHub** — the old `.gitignore` contained a `local-*` rule that silently excluded `src/lib/store/local-store.ts` from commits (that's what caused Vercel's `Module not found: Can't resolve './local-store'`). Delete the old repo (or replace its contents with this fresh folder — `git rm -r --cached .` first if reusing the same clone), re-commit, push, and redeploy. After committing, verify with:
@@ -128,23 +147,27 @@ The service-role key never reaches the browser. Tracking RPCs accept only the va
 ```
 src/
   app/                    # Next.js App Router
-    page.tsx              # the public portfolio
+    (site)/                # public routes: /, /about, /projects, /gallery,
+                          # /blog, /skills, /experience, /connect
     admin/page.tsx        # hidden admin route — unlinked, noindex
     api/admin/            # login / content CRUD / analytics (server-side)
+    api/contact/          # contact form → Resend → your inbox
+    api/email-forward/    # Resend inbound webhook → forward to Gmail
   components/
     site/                 # StarfieldBackground (atmosphere stack: Vanta net +
                           # nebulas + starfield), VantaBackground, Hero, About,
                           # Projects, Gallery (masonry + lightbox), Blog
                           # (markdown + hash routes), Skills, Experience,
-                          # SocialLinks, Navbar, Footer...
+                          # SocialLinks, ContactForm, Navbar, Footer...
     admin/                # AdminApp (login + shell) + tabs/
                           #   Overview (charts), Pages (visibility + order), Profile,
-                          #   Blog (markdown editor), Projects, Photos, Links,
+                          #   Badges (About cards), Terminal (hero window), Blog
+                          #   (markdown editor), Projects, Photos, Links,
                           #   Skills, Experience
   lib/
     store/                # dual data layer: local-store (demo) + supabase-store (prod)
     types.ts, seed.ts     # types & default content (Akila's starter persona)
-    icons.tsx             # coloured brand icons registry (22 platforms)
+    icons.tsx             # coloured brand icons registry (34 platforms)
     markdown.tsx          # dependency-free markdown renderer for blog posts
     site-context.tsx      # loads data, tracks the visit once per session
 public/
@@ -155,8 +178,8 @@ supabase/schema.sql       # one-shot database setup
 
 ## ⚙️ Notes
 
-- **Demo mode** (no env vars): content & analytics live in `localStorage` — perfect for trying the admin dashboard locally. Real mode activates automatically once Supabase env vars exist.
-- The public site is a single route (`/`); the admin dashboard lives at `/admin` and is deliberately unlinked. Both deploy to Vercel as-is.
+- **Demo mode** (no env vars): content & analytics live in `localStorage` — perfect for trying the admin dashboard locally. Real mode activates automatically once Supabase env vars exist. Same for email: without `RESEND_API_KEY` the contact form shows a friendly "email me directly" fallback instead of failing silently.
+- The public site spans `/` plus one route per section; the admin dashboard lives at `/admin` and is deliberately unlinked. Both deploy to Vercel as-is.
 - Re-running `supabase/schema.sql` is safe — inserts use `on conflict do nothing`.
 - To reset demo data: browser DevTools → Application → Local Storage → delete `cosmosfolio_*` keys.
 - Placeholder content you'll want to personalise (all editable in the admin): the social URLs (`github.com/akilamaduranga`, `wa.me/94700000000`, …), the email address, and the demo projects/skills/experience entries.
