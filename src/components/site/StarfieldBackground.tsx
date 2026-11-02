@@ -11,7 +11,7 @@ type Star = {
   baseAlpha: number;
   twinkleSpeed: number;
   twinklePhase: number;
-  hue: "white" | "mint" | "indigo";
+  hue: 0 | 1 | 2; // 0 white, 1 mint, 2 indigo
 };
 
 type ShootingStar = {
@@ -24,13 +24,50 @@ type ShootingStar = {
   len: number;
 };
 
+/** hue index -> rgb triplet used for both sprite baking and streaks */
+const HUE_RGB: readonly [number, number, number][] = [
+  [232, 230, 245], // starlight white
+  [136, 249, 192], // mint
+  [139, 107, 255], // indigo soft
+];
+
+const TARGET_FRAME_MS = 33; // ~30fps — plenty for slow twinkles, half the cost
+const DPR_CAP = 1.5; // background only; text is unaffected and stays crisp
+
+/**
+ * Bake a radial-gradient sprite per hue once, then blit it with drawImage()
+ * for every star. drawImage is GPU-friendly and skips the per-star
+ * beginPath/arc/fill + fillStyle churn of the naive loop (which meant
+ * ~340 state changes per frame). The glow is baked into the sprite too,
+ * so the old second "glow pass" disappears entirely.
+ */
+function bakeSprites(): HTMLCanvasElement[] {
+  const SIZE = 64; // generous resolution so glows stay smooth when scaled
+  return HUE_RGB.map(([r, g, b]) => {
+    const c = document.createElement("canvas");
+    c.width = SIZE;
+    c.height = SIZE;
+    const cx = SIZE / 2;
+    const ctx = c.getContext("2d")!;
+    const grad = ctx.createRadialGradient(cx, cx, 0, cx, cx, cx);
+    // hot core, short shoulder, long faint halo — one sprite does core+glow
+    grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
+    grad.addColorStop(0.18, `rgba(${r},${g},${b},0.85)`);
+    grad.addColorStop(0.38, `rgba(${r},${g},${b},0.28)`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    return c;
+  });
+}
+
 export default function StarfieldBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -38,17 +75,20 @@ export default function StarfieldBackground() {
     let width = 0;
     let height = 0;
     let raf = 0;
+    let running = true;
     let stars: Star[] = [];
     let shooting: ShootingStar[] = [];
     let mouseX = 0;
     let mouseY = 0;
     let parallaxX = 0;
     let parallaxY = 0;
+    let lastFrame = 0;
     let nextShootingAt = performance.now() + 2500;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+    const sprites = bakeSprites();
 
     const buildStars = () => {
-      const count = Math.min(Math.floor((width * height) / 6500), 340);
+      const count = Math.min(Math.floor((width * height) / 8000), 280);
       stars = Array.from({ length: count }, () => {
         const layer = Math.floor(Math.random() * 3);
         const hueRoll = Math.random();
@@ -60,7 +100,7 @@ export default function StarfieldBackground() {
           baseAlpha: layer === 2 ? 0.85 : 0.5,
           twinkleSpeed: 0.4 + Math.random() * 1.4,
           twinklePhase: Math.random() * Math.PI * 2,
-          hue: hueRoll > 0.92 ? "mint" : hueRoll > 0.84 ? "indigo" : "white",
+          hue: hueRoll > 0.92 ? 1 : hueRoll > 0.84 ? 2 : 0,
         };
       });
     };
@@ -76,18 +116,38 @@ export default function StarfieldBackground() {
       buildStars();
     };
 
+    // debounce rebuilds while the window is being dragged around
+    let resizeTimer = 0;
+    const onResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(resize, 150);
+    };
+
+    // store raw coords; normalized in the draw loop instead of per event
     const onMove = (e: MouseEvent) => {
-      mouseX = (e.clientX / width - 0.5) * 2;
-      mouseY = (e.clientY / height - 0.5) * 2;
+      mouseX = e.clientX;
+      mouseY = e.clientY;
     };
 
     const draw = (t: number) => {
+      if (!running) return;
+      raf = requestAnimationFrame(draw);
+
+      // frame cap — skip work (but keep the rAF chain alive)
+      if (t - lastFrame < TARGET_FRAME_MS) return;
+      const dt = Math.min(t - lastFrame, 64); // clamped delta, ms
+      lastFrame = t;
+      const step = dt / 16.67; // 1 == one 60fps frame
+
       ctx.clearRect(0, 0, width, height);
 
-      // ease parallax toward target
-      parallaxX += (mouseX - parallaxX) * 0.03;
-      parallaxY += (mouseY - parallaxY) * 0.03;
+      // ease parallax toward target (dt-scaled so speed is fps-independent)
+      const tx = (mouseX / width - 0.5) * 2;
+      const ty = (mouseY / height - 0.5) * 2;
+      parallaxX += (tx - parallaxX) * Math.min(0.03 * step, 1);
+      parallaxY += (ty - parallaxY) * Math.min(0.03 * step, 1);
 
+      // sprite blit per star — glow included, zero path ops
       for (const s of stars) {
         const depth = (s.layer + 1) / 3; // 0.33 .. 1
         const px = s.x + parallaxX * depth * 14;
@@ -100,24 +160,13 @@ export default function StarfieldBackground() {
             (0.55 + 0.45 * Math.sin(t * 0.001 * s.twinkleSpeed + s.twinklePhase));
         }
 
-        ctx.beginPath();
-        ctx.arc(px, py, s.size, 0, Math.PI * 2);
-        if (s.hue === "mint") ctx.fillStyle = `rgba(136, 249, 192, ${alpha})`;
-        else if (s.hue === "indigo") ctx.fillStyle = `rgba(139, 107, 255, ${alpha})`;
-        else ctx.fillStyle = `rgba(232, 230, 245, ${alpha})`;
-        ctx.fill();
-
-        // glow for bright layer
-        if (s.layer === 2 && s.size > 1.4) {
-          ctx.beginPath();
-          ctx.arc(px, py, s.size * 3, 0, Math.PI * 2);
-          ctx.fillStyle =
-            s.hue === "mint"
-              ? `rgba(136, 249, 192, ${alpha * 0.08})`
-              : `rgba(139, 107, 255, ${alpha * 0.1})`;
-          ctx.fill();
-        }
+        // bright top-layer stars draw their glow, the rest just the core
+        const glow = s.layer === 2 && s.size > 1.4;
+        const r = glow ? s.size * 3.2 : s.size * 2.6;
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+        ctx.drawImage(sprites[s.hue], px - r, py - r, r * 2, r * 2);
       }
+      ctx.globalAlpha = 1;
 
       // shooting stars
       if (!reduced) {
@@ -139,11 +188,13 @@ export default function StarfieldBackground() {
           });
         }
 
-        shooting = shooting.filter((sh) => sh.life < sh.maxLife && sh.x > -200 && sh.x < width + 200);
+        shooting = shooting.filter(
+          (sh) => sh.life < sh.maxLife && sh.x > -200 && sh.x < width + 200
+        );
         for (const sh of shooting) {
-          sh.x += sh.vx;
-          sh.y += sh.vy;
-          sh.life += 1;
+          sh.x += sh.vx * step;
+          sh.y += sh.vy * step;
+          sh.life += step;
           const fade = Math.sin((sh.life / sh.maxLife) * Math.PI);
           const tailX = sh.x - (sh.vx / Math.hypot(sh.vx, sh.vy)) * sh.len;
           const tailY = sh.y - (sh.vy / Math.hypot(sh.vx, sh.vy)) * sh.len;
@@ -165,19 +216,33 @@ export default function StarfieldBackground() {
           ctx.fill();
         }
       }
+    };
 
-      raf = requestAnimationFrame(draw);
+    // stop burning cycles when the tab is hidden (some browsers keep rAF warm)
+    const onVisibility = () => {
+      if (document.hidden) {
+        running = false;
+        cancelAnimationFrame(raf);
+      } else {
+        running = true;
+        lastFrame = performance.now();
+        raf = requestAnimationFrame(draw);
+      }
     };
 
     resize();
     raf = requestAnimationFrame(draw);
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", onResize);
     window.addEventListener("mousemove", onMove, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
+      running = false;
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("mousemove", onMove);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
@@ -194,11 +259,11 @@ export default function StarfieldBackground() {
       <div className="absolute top-1/3 -right-48 h-[38rem] w-[38rem] rounded-full bg-[radial-gradient(circle,rgba(136,249,192,0.12),transparent_65%)] blur-3xl animate-drift-2" />
       <div className="absolute bottom-[-12rem] left-1/4 h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle,rgba(99,49,251,0.16),transparent_65%)] blur-3xl animate-drift" />
 
-      {/* tech grid overlay */}
-      <div className="absolute inset-0 bg-grid opacity-60" />
+      {/* tech grid overlay — softened a touch for readability */}
+      <div className="absolute inset-0 bg-grid opacity-40" />
 
       {/* twinkling accent dots */}
-      <div className="absolute inset-0 bg-dots opacity-30" />
+      <div className="absolute inset-0 bg-dots opacity-20" />
 
       {/* star canvas */}
       <canvas ref={canvasRef} className="absolute inset-0" />
@@ -206,6 +271,16 @@ export default function StarfieldBackground() {
       {/* vignette + noise */}
       <div className="absolute inset-0 vignette" />
       <div className="absolute inset-0 noise-overlay pointer-events-none" />
+
+      {/*
+        The readability veil — kept INSIDE the background stack so it can't
+        be forgotten when the background is mounted. z-index -5 paints it
+        above everything here (the stack root is -10) but below all real
+        page content, dimming the animation just enough to read comfortably
+        while keeping it alive behind the text. Try removing it and the
+        paragraph text over the network lines gets noticeably harder.
+      */}
+      <div className="readability-veil" />
     </div>
   );
 }

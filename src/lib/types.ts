@@ -90,7 +90,7 @@ export interface BlogPost {
 }
 
 export interface PageSection {
-  /** section key — also the anchor id on the home page (e.g. "about") */
+  /** section key — also the site route it opens, e.g. "about" -> /about */
   key: string;
   label: string;
   description: string;

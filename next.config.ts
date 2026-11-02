@@ -1,11 +1,16 @@
 import type { NextConfig } from "next";
 
 /**
- * connect-src must allow the Supabase REST origin the client actually talks
- * to. Hard-coding https://*.supabase.co silently breaks public reads (the
- * browser blocks them → the site falls back to demo content) for any project
- * not on that domain — e.g. self-hosted Supabase. Derive it from the
- * configured URL instead; fall back to the wildcard when unset.
+ * Security headers applied to every response (source project config —
+ * the packaged ZIP ships the same headers without `output: standalone`).
+ */
+
+/**
+ * connect-src must allow the Supabase REST origin the client actually
+ * talks to. Hard-coding https://*.supabase.co silently breaks public reads
+ * (the browser blocks them → the site falls back to demo content) for any
+ * project not on that domain — e.g. self-hosted Supabase. Derive it from
+ * the configured URL instead; fall back to the wildcard when unset.
  */
 function supabaseConnectSrc(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,9 +27,6 @@ function supabaseConnectSrc(): string {
   return "https://*.supabase.co wss://*.supabase.co";
 }
 
-/**
- * Security headers applied to every response.
- */
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -67,9 +69,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   poweredByHeader: false,
+  /* config options here */
   typescript: {
-    // don't let a stray TS nit block a deploy — lint is clean, this is a net
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
@@ -82,6 +85,19 @@ const nextConfig: NextConfig = {
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
       },
     ];
+  },
+  // E2E only (never set in production): proxies a mock Supabase through
+  // this origin so the headless test browser can reach it same-origin.
+  async rewrites() {
+    if (process.env.E2E_MOCK_URL) {
+      return [
+        {
+          source: "/mock-api/:path*",
+          destination: `${process.env.E2E_MOCK_URL}/:path*`,
+        },
+      ];
+    }
+    return [];
   },
 };
 

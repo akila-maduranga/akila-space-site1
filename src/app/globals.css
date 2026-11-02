@@ -209,6 +209,57 @@ body {
   border: 1px solid rgba(139, 107, 255, 0.2);
 }
 
+/* ---------- Readability layers ---------- */
+
+/**
+ * The readability veil — a translucent layer painted as the LAST child of
+ * the fixed background stack (whose root sits at z-index -10). DOM order
+ * puts it above the Vanta canvas, star canvas, nebulae and grid — while
+ * the whole stack still paints below all real page content. It gently
+ * dims the starfield / network animation so text sitting directly on the
+ * background gains contrast, yet the animation stays clearly visible
+ * through it. Slightly stronger in the middle band where content usually
+ * is, softer at the very top/bottom so the hero and footer keep more of
+ * the atmosphere.
+ */
+.readability-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(1, 1, 13, 0.3) 0%,
+    rgba(1, 1, 13, 0.44) 22%,
+    rgba(1, 1, 13, 0.47) 78%,
+    rgba(1, 1, 13, 0.34) 100%
+  );
+}
+
+/**
+ * The content panel — a frosted glass slab that text-heavy page content
+ * sits on. `backdrop-filter` blurs whatever the animated background is
+ * doing BEHIND the panel, so the motion stays visible (softly) while the
+ * text on top becomes comfortably readable.
+ */
+.page-panel {
+  position: relative;
+  background: rgba(6, 6, 18, 0.58);
+  backdrop-filter: blur(16px) saturate(1.12);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  border: 1px solid rgba(139, 107, 255, 0.14);
+  border-radius: 1.5rem;
+  box-shadow: 0 30px 90px -36px rgba(0, 0, 0, 0.85);
+}
+
+/* Lighter variant for wrapping inside glass cards */
+.page-panel-soft {
+  background: rgba(6, 6, 18, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 107, 255, 0.12);
+  border-radius: 1.25rem;
+}
+
 .glow-border {
   position: relative;
 }

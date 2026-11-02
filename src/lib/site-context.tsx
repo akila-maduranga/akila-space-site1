@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { getStore } from "./store";
 import {
   SEED_EXPERIENCES,
@@ -131,14 +132,26 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [store]);
 
-  // Keep the document title in sync with the editable profile — but never on
-  // the admin dashboard, which keeps its own unassuming "Admin" title.
+  // Keep the document title in sync with the current page and the editable
+  // profile — but never on the admin dashboard, which keeps its own
+  // unassuming "Admin" title. With the multi-page layout each route gets
+  // its own title: "Projects · Akila Maduranga", "About · ..." etc.
+  const pathname = usePathname();
   useEffect(() => {
-    if (typeof document !== "undefined" && profile?.name) {
-      if (window.location.pathname.startsWith("/admin")) return;
-      document.title = `${profile.name} — ${profile.title || "Portfolio"}`;
+    if (typeof document === "undefined" || !profile?.name) return;
+    if (pathname.startsWith("/admin")) {
+      document.title = "Admin — mission control";
+      return;
     }
-  }, [profile?.name, profile?.title]);
+    const segment = pathname.split("/").filter(Boolean)[0];
+    if (!segment) {
+      document.title = `${profile.name} — ${profile.title || "Portfolio"}`;
+      return;
+    }
+    const page = pages.find((p) => p.key === segment);
+    const label = page?.label ?? segment;
+    document.title = `${label} · ${profile.name}`;
+  }, [profile?.name, profile?.title, pathname, pages]);
 
   const value: SiteContextValue = {
     loading,

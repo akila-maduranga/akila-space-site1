@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Mail, MapPin, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRef } from "react";
 import type { Profile, SocialLink } from "@/lib/types";
 import { PlatformIcon } from "@/lib/icons";
@@ -112,7 +113,15 @@ export default function Hero({
       ref={ref}
       className="relative flex min-h-screen items-center overflow-hidden pt-24 pb-16"
     >
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
+      {/* local readability scrim — deepens the space behind the headline
+          just enough that big text stays crisp over the moving network,
+          without hiding the animation */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_60%_at_28%_45%,rgba(1,1,13,0.5),transparent_70%),radial-gradient(ellipse_45%_50%_at_78%_55%,rgba(1,1,13,0.35),transparent_70%)]"
+      />
+
+      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
         <motion.div style={{ opacity: fade, y: rise }}>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -171,13 +180,13 @@ export default function Hero({
             transition={{ duration: 0.7, delay: 0.7 }}
             className="mt-8 flex flex-wrap items-center gap-4"
           >
-            <a
-              href="#projects"
+            <Link
+              href="/projects"
               className="mint-glow-btn group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo to-indigo/70 px-6 py-3 font-display text-sm font-semibold text-white shadow-[0_10px_40px_-10px_rgba(99,49,251,0.8)]"
             >
               see what I&apos;ve made
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
-            </a>
+            </Link>
             <a
               href={`mailto:${profile.email}`}
               className="inline-flex items-center gap-2 rounded-full border border-mint/35 bg-mint/[0.04] px-6 py-3 font-display text-sm font-semibold text-mint transition-all hover:bg-mint/10 hover:shadow-[0_0_28px_rgba(136,249,192,0.2)]"
@@ -245,10 +254,10 @@ export default function Hero({
         </div>
       </div>
 
-      {/* scroll indicator */}
+      {/* scroll indicator — points at the explore launchpad below */}
       <motion.a
-        href="#about"
-        aria-label="Scroll to about section"
+        href="#explore"
+        aria-label="Scroll to the explore section"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.6, duration: 0.8 }}
