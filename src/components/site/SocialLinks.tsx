@@ -32,13 +32,11 @@ export default function SocialLinks({
               <span className="gradient-text"> about anything</span>
             </h3>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Want to talk cameras, code, self-hosting, or the best short-eats
-              spot on the island? My inbox is open. No pitch required — nice
-              strangers are welcome too.
+              Want to talk?send me a mail. My inbox is open..
             </p>
             <ContactForm profile={profile} />
             <p className="mt-4 font-mono text-xs text-muted-foreground">
-              <span className="text-mint">▸</span> usually replies within a day or two — no promises
+              <span className="text-mint">▸</span> usually replies within a hour or two — no promises
             </p>
           </motion.div>
 
