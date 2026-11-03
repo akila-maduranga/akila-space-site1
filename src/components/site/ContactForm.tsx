@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2, Send, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, PenLine, Send, TriangleAlert, X } from "lucide-react";
 import type { Profile } from "@/lib/types";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
 /** Contact form for the /connect page — posts to /api/contact
  *  (Resend) and falls back to a plain mailto: link when email
- *  isn't configured on the deployment. */
+ *  isn't configured on the deployment. The form stays hidden
+ *  until the reader clicks the "Send me a message" button. */
 export default function ContactForm({ profile }: { profile: Profile }) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [configured, setConfigured] = useState(true);
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "", website: "" });
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -48,6 +50,36 @@ export default function ContactForm({ profile }: { profile: Profile }) {
   const inputCls =
     "w-full rounded-xl border border-indigo/20 bg-white/[0.04] px-4 py-3 text-sm text-starlight placeholder:text-muted-foreground/60 outline-none transition-all duration-300 focus:border-mint/50 focus:bg-white/[0.06] focus:shadow-[0_0_24px_rgba(136,249,192,0.12)]";
 
+  // hidden by default — the editable mail form appears after this
+  // button is clicked (same card language as the link cards beside it)
+  if (!open) {
+    return (
+      <motion.button
+        type="button"
+        onClick={() => setOpen(true)}
+        initial={{ opacity: 0, y: 26 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="glass card-hover group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl p-4 text-left sm:p-5"
+        aria-label="Open the mail form"
+      >
+        <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-indigo/20 bg-white/[0.04] text-mint transition-all duration-300 group-hover:-rotate-6 group-hover:scale-105 group-hover:border-mint/50 group-hover:shadow-[0_0_24px_rgba(136,249,192,0.25)]">
+          <Mail className="h-6 w-6" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="font-display block text-sm font-semibold text-starlight transition-colors group-hover:text-mint sm:text-base">
+            Send me a message
+          </span>
+          <span className="block truncate font-mono text-[11px] text-muted-foreground">
+            <span className="text-mint">▸</span> opens an editable form right here — no mail app needed
+          </span>
+        </span>
+        <PenLine className="relative h-4 w-4 shrink-0 text-muted-foreground transition-all duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-mint" aria-hidden />
+      </motion.button>
+    );
+  }
+
   if (status === "sent") {
     return (
       <motion.div
@@ -75,7 +107,21 @@ export default function ContactForm({ profile }: { profile: Profile }) {
   }
 
   return (
-    <form onSubmit={submit} className="glass space-y-4 rounded-2xl p-6 text-left" noValidate>
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="relative"
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="absolute right-4 top-4 z-10 rounded-full border border-indigo/20 bg-white/[0.04] p-1.5 text-muted-foreground transition-colors hover:border-mint/40 hover:text-mint"
+        aria-label="Hide the mail form"
+      >
+        <X className="h-3.5 w-3.5" aria-hidden />
+      </button>
+      <form onSubmit={submit} className="glass space-y-4 rounded-2xl p-6 text-left" noValidate>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block font-mono text-[11px] tracking-wide text-muted-foreground">
@@ -90,6 +136,7 @@ export default function ContactForm({ profile }: { profile: Profile }) {
             placeholder="your name"
             className={inputCls}
             autoComplete="name"
+            autoFocus
           />
         </label>
         <label className="block">
@@ -189,6 +236,7 @@ export default function ContactForm({ profile }: { profile: Profile }) {
           or email {profile.email}
         </a>
       </div>
-    </form>
+      </form>
+    </motion.div>
   );
 }
