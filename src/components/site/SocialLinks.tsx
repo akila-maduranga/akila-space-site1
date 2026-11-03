@@ -19,13 +19,16 @@ export default function SocialLinks({
     <div className="relative">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-          {/* left — message */}
+          {/* left — message
+              min-w-0: grid items size their track from content by default;
+              without it the truncated (nowrap) lines below force the track
+              wider than the viewport on phones (horizontal-scroll bug). */}
           <motion.div
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col justify-center"
+            className="flex min-w-0 flex-col justify-center"
           >
             <h3 className="font-display text-3xl font-bold leading-tight text-starlight sm:text-4xl">
               Say hi —
@@ -40,8 +43,8 @@ export default function SocialLinks({
             </p>
           </motion.div>
 
-          {/* right — link cards */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* right — link cards (min-w-0 for the same grid-blowout reason) */}
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             {socialLinks.map((link, i) => {
               const meta = PLATFORM_META[link.platform] || PLATFORM_META.other;
               let display = link.url;
@@ -59,7 +62,7 @@ export default function SocialLinks({
                   transition={{ duration: 0.55, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
                   onClick={() => onLinkClick(link)}
                   style={{ ["--p" as string]: meta.color }}
-                  className="glass card-hover group relative flex items-center gap-4 overflow-hidden rounded-2xl p-4 text-left sm:p-5"
+                  className="glass card-hover group relative flex min-w-0 items-center gap-4 overflow-hidden rounded-2xl p-4 text-left sm:p-5"
                   aria-label={`Open ${link.label} profile`}
                 >
                   {/* hover color wash */}
