@@ -20,13 +20,14 @@ export default function About({ profile }: { profile: Profile }) {
   return (
     <div className="relative">
       <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
-          {/* avatar card */}
+          {/* avatar card — min-w-0 keeps the implicit grid track from blowing
+              out past the viewport on narrow phones */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="mx-auto w-fit"
+            className="mx-auto w-fit min-w-0"
           >
             <div className="relative">
               {/* rotating dashed ring */}
@@ -67,8 +68,9 @@ export default function About({ profile }: { profile: Profile }) {
             </div>
           </motion.div>
 
-          {/* bio */}
-          <div>
+          {/* bio — min-w-0: same grid-blowout guard (text must wrap inside
+              the panel, not push the track past the screen edge) */}
+          <div className="min-w-0">
             {paragraphs.map((para, i) => (
               <motion.p
                 key={i}
@@ -100,7 +102,7 @@ export default function About({ profile }: { profile: Profile }) {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-60px" }}
                     transition={{ duration: 0.5, delay: 0.15 + i * 0.08 }}
-                    className="glass card-hover flex items-center gap-3 rounded-xl px-4 py-3"
+                    className="glass card-hover flex min-w-0 items-center gap-3 rounded-xl px-4 py-3"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo/15 text-indigo-soft">
                       <FactIcon icon={fact.icon} className="h-4 w-4" />

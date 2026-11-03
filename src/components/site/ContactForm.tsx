@@ -72,7 +72,7 @@ export default function ContactForm({ profile }: { profile: Profile }) {
             Send me a message
           </span>
           <span className="block truncate font-mono text-[11px] text-muted-foreground">
-            <span className="text-mint">▸</span> opens an editable form right here — no mail app needed
+            <span className="text-mint">▸</span> opens right here — no mail app needed
           </span>
         </span>
         <PenLine className="relative h-4 w-4 shrink-0 text-muted-foreground transition-all duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-mint" aria-hidden />
@@ -178,7 +178,7 @@ export default function ContactForm({ profile }: { profile: Profile }) {
           required
           maxLength={5000}
           rows={4}
-          placeholder="cameras, code, collabs, or the best short-eats spot on the island…"
+          placeholder="your message"
           className={`${inputCls} resize-none`}
         />
       </label>

@@ -47,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${grotesk.variable} ${jetbrains.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${grotesk.variable} ${jetbrains.variable} overflow-x-clip font-sans antialiased bg-background text-foreground`}
       >
         {children}
         <Toaster />
